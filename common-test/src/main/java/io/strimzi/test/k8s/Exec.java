@@ -67,8 +67,8 @@ class Exec {
             ProcessResult result = new ProcessResult(sc, stdout, stderr);
             if (sc != 0) {
                 String msg = "`" + join(" ", cmd) + "` got status code " + sc + " and stderr:\n------\n" + stderr + "\n------\nand stdout:\n------\n" + stdout + "\n------";
-                Pattern re = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
-                Matcher matcher = re.matcher(stderr);
+                Pattern existenceRe = Pattern.compile("Error from server \\(([a-zA-Z0-9]+)\\):");
+                Matcher matcher = existenceRe.matcher(stderr);
                 KubeClusterException t = null;
                 if (matcher.find()) {
                     switch (matcher.group(1)) {
@@ -81,6 +81,11 @@ class Exec {
                         default:
                             break;
                     }
+                }
+                Pattern invalidRe = Pattern.compile("The ([a-zA-Z0-9]+) \"([a-z0-9.-]+)\" is invalid:");
+                matcher = invalidRe.matcher(stderr);
+                if (matcher.find()) {
+                    t = new KubeClusterException.InvalidResource(result, msg);
                 }
                 if (t == null) {
                     t = new KubeClusterException(result, msg);

@@ -7,6 +7,7 @@ package io.strimzi.test;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -88,9 +89,7 @@ public class StrimziRunnerTest {
 
     @Test
     public void test0() {
-        if (System.getenv(StrimziRunner.NOTEARDOWN) != null) {
-            return;
-        }
+        Assume.assumeTrue(System.getenv(StrimziRunner.NOTEARDOWN) == null);
         Result r =  jUnitCore.run(Request.method(ClsWithClusterResource.class, "test0"));
         if (!r.wasSuccessful()) {
             r.getFailures().get(0).getException().printStackTrace();
@@ -104,9 +103,7 @@ public class StrimziRunnerTest {
 
     @Test
     public void test1() {
-        if (System.getenv(StrimziRunner.NOTEARDOWN) != null) {
-            return;
-        }
+        Assume.assumeTrue(System.getenv(StrimziRunner.NOTEARDOWN) == null);
         Result r =  jUnitCore.run(Request.method(ClsWithClusterResource.class, "test1"));
         if (!r.wasSuccessful()) {
             r.getFailures().get(0).getException().printStackTrace();
@@ -120,9 +117,7 @@ public class StrimziRunnerTest {
 
     @Test
     public void test2() {
-        if (System.getenv(StrimziRunner.NOTEARDOWN) != null) {
-            return;
-        }
+        Assume.assumeTrue(System.getenv(StrimziRunner.NOTEARDOWN) == null);
         for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
             when(MOCK_KUBE_CLIENT.list(resourceType)).thenReturn(asList(resourceType + "1", resourceType + "2"));
             when(MOCK_KUBE_CLIENT.describe(resourceType, resourceType + "1")).thenReturn("Blah\nblah,\n" + resourceType + "1");

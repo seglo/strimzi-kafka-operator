@@ -9,11 +9,17 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
+
+import static org.junit.Assert.assertEquals;
 
 public final class TestUtils {
 
@@ -92,5 +98,50 @@ public final class TestUtils {
 
     public static String changeOrgAndTag(String image, String newOrg, String newTag) {
         return image.replaceFirst("^strimzi/", newOrg + "/").replaceFirst(":[^:]+$", ":" + newTag);
+    }
+
+    /**
+     * Read the classpath resource with the given resourceName and return the content as a String
+     * @param cls The class relative to which the resource will be loaded.
+     * @param resourceName The name of the resource
+     * @return The resource content
+     * @throws IOException
+     */
+    public static String readResource(Class<?> cls, String resourceName) {
+        try {
+            InputStream expectedStream = cls.getResourceAsStream(resourceName);
+            if (expectedStream != null) {
+                try {
+                    StringBuilder sb = new StringBuilder();
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(expectedStream, StandardCharsets.UTF_8))) {
+                        String line = reader.readLine();
+                        while (line != null) {
+                            sb.append(line).append("\n");
+                            line = reader.readLine();
+                        }
+                        return sb.toString();
+                    }
+                } finally {
+                    expectedStream.close();
+                }
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Assert that the given actual string is the same as content of the
+     * the classpath resource resourceName.
+     * @param cls The class relative to which the resource will be loaded.
+     * @param resourceName The name of the resource
+     * @param actual The actual
+     * @throws IOException
+     */
+    public static void assertResourceMatch(Class<?> cls, String resourceName, String actual) throws IOException {
+        String r = readResource(cls, resourceName);
+        assertEquals(r, actual);
     }
 }

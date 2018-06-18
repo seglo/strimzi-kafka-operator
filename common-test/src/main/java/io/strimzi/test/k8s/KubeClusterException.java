@@ -30,4 +30,11 @@ public class KubeClusterException extends RuntimeException {
             super(result, s);
         }
     }
+
+    public static class InvalidResource extends KubeClusterException {
+
+        public InvalidResource(ProcessResult result, String s) {
+            super(result, s);
+        }
+    }
 }
