@@ -38,6 +38,7 @@
 
     <modules>
         <module>common-test</module>
+        <module>crd-generator</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
         <module>systemtest</module>
