@@ -1,0 +1,8 @@
+apiVersion: cluster-operator.strimzi.io/v1alpha1
+kind: Kafka
+metadata:
+  name: example
+spec:
+  topicOperator:
+    - foo: sfv
+      bar: 1

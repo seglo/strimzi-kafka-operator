@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.operator.cluster.crd.model.Resources;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;

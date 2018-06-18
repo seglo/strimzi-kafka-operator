@@ -6,8 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
-import static io.strimzi.operator.cluster.model.MemoryDeserializer.format;
-import static io.strimzi.operator.cluster.model.MemoryDeserializer.parse;
+import static io.strimzi.operator.cluster.crd.model.MemoryDeserializer.format;
+import static io.strimzi.operator.cluster.crd.model.MemoryDeserializer.parse;
 import static org.junit.Assert.assertEquals;
 
 public class MemoryDeserializerTest {

@@ -2,7 +2,7 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.crd.model;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -127,7 +127,7 @@ public class MemoryDeserializer extends StdScalarDeserializer<Long> {
         return factor;
     }
 
-    static String format(long bytes) {
+    public static String format(long bytes) {
         if (bytes == 0) {
             return "0";
         }

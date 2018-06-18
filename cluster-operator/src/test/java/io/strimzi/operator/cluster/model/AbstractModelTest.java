@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.strimzi.operator.cluster.crd.model.JvmOptions;
 import org.junit.Test;
 
 import java.util.ArrayList;

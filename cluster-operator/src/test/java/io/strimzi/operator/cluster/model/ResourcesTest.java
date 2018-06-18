@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.crd.model.Resources;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -13,12 +14,12 @@ public class ResourcesTest {
     @Test
     public void testDeserializeSuffixes() {
         Resources opts = Resources.fromJson("{\"limits\": {\"memory\": \"10Gi\", \"cpu\": \"1\"}, \"requests\": {\"memory\": \"5G\", \"cpu\": 1}}");
-        assertEquals(10737418240L, opts.getLimits().getMemory());
-        assertEquals(1000, opts.getLimits().getMilliCpu());
-        assertEquals("1", opts.getLimits().getCpuFormatted());
-        assertEquals(5000000000L, opts.getRequests().getMemory());
-        assertEquals(1000, opts.getLimits().getMilliCpu());
-        assertEquals("1", opts.getLimits().getCpuFormatted());
+        assertEquals(10737418240L, opts.getLimits().getMemoryLong());
+        assertEquals(1000, opts.getLimits().getMilliCpuInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
+        assertEquals(5000000000L, opts.getRequests().getMemoryLong());
+        assertEquals(1000, opts.getLimits().getMilliCpuInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
         AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
         };
         abstractModel.setResources(opts);
@@ -28,15 +29,15 @@ public class ResourcesTest {
     @Test
     public void testDeserializeInts() {
         Resources opts = Resources.fromJson("{\"limits\": {\"memory\": 10737418240}, \"requests\": {\"memory\": 5000000000}}");
-        assertEquals(10737418240L, opts.getLimits().getMemory());
-        assertEquals(5000000000L, opts.getRequests().getMemory());
+        assertEquals(10737418240L, opts.getLimits().getMemoryLong());
+        assertEquals(5000000000L, opts.getRequests().getMemoryLong());
     }
 
     @Test
     public void testDeserializeDefaults() {
         Resources opts = Resources.fromJson("{\"limits\": {\"memory\": 10737418240}, \"requests\": {} }");
-        assertEquals(10737418240L, opts.getLimits().getMemory());
-        assertEquals(0, opts.getRequests().getMemory());
+        assertEquals(10737418240L, opts.getLimits().getMemoryLong());
+        assertEquals(0, opts.getRequests().getMemoryLong());
     }
 
     @Test(expected = IllegalArgumentException.class)

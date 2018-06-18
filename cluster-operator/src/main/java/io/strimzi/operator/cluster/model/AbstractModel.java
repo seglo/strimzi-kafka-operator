@@ -46,10 +46,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.vertx.core.json.JsonObject;
+import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.operator.cluster.crd.model.Resources;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,7 +94,7 @@ public abstract class AbstractModel {
     protected final String metricsPortName = "kafkametrics";
     protected boolean isMetricsEnabled;
 
-    protected JsonObject metricsConfig;
+    protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String metricsConfigName;
 
     protected Storage storage;
@@ -175,11 +175,11 @@ public abstract class AbstractModel {
         this.isMetricsEnabled = isMetricsEnabled;
     }
 
-    protected JsonObject getMetricsConfig() {
+    protected Iterable<Map.Entry<String, Object>> getMetricsConfig() {
         return metricsConfig;
     }
 
-    protected void setMetricsConfig(JsonObject metricsConfig) {
+    protected void setMetricsConfig(Iterable<Map.Entry<String, Object>> metricsConfig) {
         this.metricsConfig = metricsConfig;
     }
 
@@ -656,21 +656,21 @@ public abstract class AbstractModel {
             ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
             Resources.CpuMemory limits = resources.getLimits();
             if (limits != null
-                    && limits.getMilliCpu() > 0) {
-                builder.addToLimits("cpu", new Quantity(limits.getCpuFormatted()));
+                    && limits.getMilliCpuInt() > 0) {
+                builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
             }
             if (limits != null
-                    && limits.getMemory() > 0) {
-                builder.addToLimits("memory", new Quantity(limits.getMemoryFormatted()));
+                    && limits.getMemoryLong() > 0) {
+                builder.addToLimits("memory", new Quantity(limits.getMemoryString()));
             }
             Resources.CpuMemory requests = resources.getRequests();
             if (requests != null
-                    && requests.getMilliCpu() > 0) {
-                builder.addToRequests("cpu", new Quantity(requests.getCpuFormatted()));
+                    && requests.getMilliCpuInt() > 0) {
+                builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));
             }
             if (requests != null
-                    && requests.getMemory() > 0) {
-                builder.addToRequests("memory", new Quantity(requests.getMemoryFormatted()));
+                    && requests.getMemoryLong() > 0) {
+                builder.addToRequests("memory", new Quantity(requests.getMemoryString()));
             }
             return builder.build();
         }

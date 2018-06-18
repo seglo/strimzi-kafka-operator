@@ -17,7 +17,7 @@ import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.model.Resources;
+import io.strimzi.operator.cluster.crd.model.Resources;
 import io.strimzi.operator.cluster.model.Storage;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -660,16 +660,16 @@ public class KafkaAssemblyOperatorMockTest {
         ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
         Resources resources = Resources.fromJson(this.resources);
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(resources.getRequests().getCpuFormatted(), requirements.getRequests().get("cpu").getAmount());
+            context.assertEquals(resources.getRequests().getMilliCpu(), requirements.getRequests().get("cpu").getAmount());
         }
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(resources.getRequests().getMemoryFormatted(), requirements.getRequests().get("memory").getAmount());
+            context.assertEquals(resources.getRequests().getMemoryString(), requirements.getRequests().get("memory").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(resources.getLimits().getCpuFormatted(), requirements.getLimits().get("cpu").getAmount());
+            context.assertEquals(resources.getLimits().getMilliCpu(), requirements.getLimits().get("cpu").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(resources.getLimits().getMemoryFormatted(), requirements.getLimits().get("memory").getAmount());
+            context.assertEquals(resources.getLimits().getMemoryString(), requirements.getLimits().get("memory").getAmount());
         }
     }
 

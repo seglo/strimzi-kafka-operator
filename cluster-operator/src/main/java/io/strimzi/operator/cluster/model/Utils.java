@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.strimzi.operator.cluster.crd.model.JsonUtils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 

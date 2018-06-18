@@ -34,16 +34,16 @@ public class TopicOperator extends AbstractModel {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // Configuration defaults
-    protected static final String DEFAULT_IMAGE =
+    public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
-    protected static final int DEFAULT_REPLICAS = 1;
-    protected static final int DEFAULT_HEALTHCHECK_DELAY = 10;
-    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    protected static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    protected static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
-    protected static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
-    protected static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
-    protected static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
+    public static final int DEFAULT_REPLICAS = 1;
+    public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
+    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
+    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
+    public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
+    public static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
+    public static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
+    public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-operator-config";
@@ -148,7 +148,7 @@ public class TopicOperator extends AbstractModel {
     }
 
     public static String topicOperatorName(String cluster) {
-        return cluster + TopicOperator.NAME_SUFFIX;
+        return cluster + io.strimzi.operator.cluster.model.TopicOperator.NAME_SUFFIX;
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
@@ -162,7 +162,7 @@ public class TopicOperator extends AbstractModel {
     protected static String defaultTopicConfigMapLabels(String cluster) {
         return String.format("%s=%s,%s=%s",
                 Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_KIND_LABEL, TopicOperator.TOPIC_CM_KIND);
+                Labels.STRIMZI_KIND_LABEL, io.strimzi.operator.cluster.model.TopicOperator.TOPIC_CM_KIND);
     }
 
     /**
@@ -181,12 +181,12 @@ public class TopicOperator extends AbstractModel {
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
-            TopicOperatorConfig tcConfig = TopicOperatorConfig.fromJson(config);
+            io.strimzi.operator.cluster.crd.model.TopicOperator tcConfig = io.strimzi.operator.cluster.crd.model.TopicOperator.fromJson(config);
 
             topicOperator.setImage(tcConfig.getImage());
             topicOperator.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
-            topicOperator.setReconciliationIntervalMs(tcConfig.getReconciliationInterval());
-            topicOperator.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeout());
+            topicOperator.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
+            topicOperator.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds());
             topicOperator.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
             topicOperator.setResources(tcConfig.getResources());
             topicOperator.setUserAffinity(tcConfig.getAffinity());

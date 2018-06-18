@@ -1,0 +1,241 @@
+[[cluster-operator.strimzi.io-v1alpha1-kind-Kafka]]
+[[cluster-operator.strimzi.io-v1alpha1-type-KafkaAssembly]]
+## `Kafka` v1alpha1 cluster-operator.strimzi.io
+
+
+[options="header"]
+|====
+|Field        |Description
+|spec  1.2+<.<|
+|<<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec]]
+## `KafkaAssemblySpec` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssembly,`KafkaAssembly`>>
+
+
+[options="header"]
+|====
+|Field                 |Description
+|kafka          1.2+<.<|Configuration of the Kafka cluster
+|<<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
+|zookeeper      1.2+<.<|Configuration of the Zookeeper cluster
+|<<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+|topicOperator  1.2+<.<|Configuration of the Topic Operator
+|<<cluster-operator.strimzi.io-v1alpha1-type-TopicOperator,`TopicOperator`>>
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-Kafka]]
+## `Kafka` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field                       |Description
+|replicas             1.2+<.<|The number of pods in the cluster.
+|integer
+|image                1.2+<.<|The docker image for the pods.
+|string
+|storage              1.2+<.<|Persistent storage (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|<<cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|rackConfig           1.2+<.<|Configuration of the `broker.rack` broker config.
+|<<cluster-operator.strimzi.io-v1alpha1-type-RackConfig,`RackConfig`>>
+|brokerRackInitImage  1.2+<.<|The image of the init container used for initializing the `broker.rack`.
+|string
+|livenessProbe        1.2+<.<|Pod liveness checking.
+|<<cluster-operator.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|readinessProbe       1.2+<.<|Pod readiness checking.
+|<<cluster-operator.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|jvmOptions           1.2+<.<|JVM Options for pods
+|<<cluster-operator.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
+|affinity             1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|metrics              1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|config               1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
+|map
+|resources            1.2+<.<|Resource constraints (limits and requests).
+|<<cluster-operator.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage]]
+## `EphemeralStorage` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `EphemeralStorage` from <<cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>.
+It must have the value `ephemeral` for the type `EphemeralStorage`.
+[options="header"]
+|====
+|Field        |Description
+|type  1.2+<.<|Must be `ephemeral`
+|string
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage]]
+## `PersistentClaimStorage` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+
+
+The `type` property is a discriminator that distinguishes the use of the type `PersistentClaimStorage` from <<cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>.
+It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
+[options="header"]
+|====
+|Field               |Description
+|class        1.2+<.<|The storage class to use for dynamic volume allocation.
+|string
+|deleteClaim  1.2+<.<|Specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
+|boolean
+|selector     1.2+<.<|Specifies a specific persistent volume to use. It contains a matchLabels field which defines an inner JSON object with key:value representing labels for selecting such a volume.
+|map
+|size         1.2+<.<|When type=persistent-claim, defines the size of the persistent volume claim (i.e 1Gi). Mandatory when type=persistent-claim.
+|string
+|type         1.2+<.<|Must be `persistent-claim`
+|string
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-RackConfig]]
+## `RackConfig` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
+
+
+[options="header"]
+|====
+|Field               |Description
+|topologyKey  1.2+<.<|A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config.
+|string
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-Probe]]
+## `Probe` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+
+
+[options="header"]
+|====
+|Field                       |Description
+|initialDelaySeconds  1.2+<.<|The initial delay before first the health is first checked.
+|integer
+|timeoutSeconds       1.2+<.<|The timeout for each attempted health check.
+|integer
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-JvmOptions]]
+## `JvmOptions` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+
+
+[options="header"]
+|====
+|Field           |Description
+|-XX      1.2+<.<|A map of -XX options to the JVM
+|map
+|-Xms     1.2+<.<|-Xms option to to the JVM
+|string
+|-Xmx     1.2+<.<|-Xmx option to to the JVM
+|string
+|-server  1.2+<.<|-server option to to the JVM
+|boolean
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-Resources]]
+## `Resources` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<cluster-operator.strimzi.io-v1alpha1-type-TopicOperator,`TopicOperator`>>, <<cluster-operator.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+
+
+[options="header"]
+|====
+|Field            |Description
+|limits    1.2+<.<|Resource limits applied at runtime.
+|<<cluster-operator.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|requests  1.2+<.<|Resource requests applied during pod scheduling.
+|<<cluster-operator.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-CpuMemory]]
+## `CpuMemory` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+
+
+[options="header"]
+|====
+|Field          |Description
+|cpu     1.2+<.<|CPU
+|string
+|memory  1.2+<.<|Memory
+|string
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-Zookeeper]]
+## `Zookeeper` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field                  |Description
+|replicas        1.2+<.<|The number of pods in the cluster.
+|integer
+|image           1.2+<.<|The docker image for the pods.
+|string
+|storage         1.2+<.<|Persistent storage (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|<<cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|livenessProbe   1.2+<.<|Pod liveness checking.
+|<<cluster-operator.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|readinessProbe  1.2+<.<|Pod readiness checking.
+|<<cluster-operator.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|jvmOptions      1.2+<.<|JVM Options for pods
+|<<cluster-operator.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
+|affinity        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|resources       1.2+<.<|Resource constraints (limits and requests).
+|<<cluster-operator.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|====
+
+[[cluster-operator.strimzi.io-v1alpha1-type-TopicOperator]]
+## `TopicOperator` v1alpha1 cluster-operator.strimzi.io
+
+Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field                                  |Description
+|affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|image                           1.2+<.<|The image to use for the topic operator
+|string
+|reconciliationInterval          1.2+<.<|
+|string
+|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
+|string
+|resources                       1.2+<.<|
+|<<cluster-operator.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata
+|integer
+|watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
+|string
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session
+|string
+|====
+

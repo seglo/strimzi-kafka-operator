@@ -6,8 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.Test;
 
-import static io.strimzi.operator.cluster.model.MilliCpuDeserializer.format;
-import static io.strimzi.operator.cluster.model.MilliCpuDeserializer.parse;
+import static io.strimzi.operator.cluster.crd.model.MilliCpuDeserializer.format;
+import static io.strimzi.operator.cluster.crd.model.MilliCpuDeserializer.parse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.cluster.ResourceUtils;
 
+import io.strimzi.operator.cluster.crd.model.JvmOptions;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

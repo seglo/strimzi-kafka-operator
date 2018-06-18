@@ -2,8 +2,15 @@
  * Copyright 2018, Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.Example;
+
+/**
+ * Representation of the rack configuration.
+ */
 public class RackConfig {
 
     private String topologyKey;
@@ -16,6 +23,10 @@ public class RackConfig {
         this.topologyKey = topologyKey;
     }
 
+    @Description("A key that matches labels assigned to the OpenShift or Kubernetes cluster nodes. " +
+            "The value of the label is used to set the broker's `broker.rack` config.")
+    @Example("failure-domain.beta.kubernetes.io/zone")
+    @JsonProperty(required = true)
     public String getTopologyKey() {
         return topologyKey;
     }

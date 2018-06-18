@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -26,6 +27,13 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
+import io.strimzi.operator.cluster.crd.model.MemoryDeserializer;
+import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.operator.cluster.crd.model.Kafka;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
+import io.strimzi.operator.cluster.crd.model.RackConfig;
+import io.strimzi.operator.cluster.crd.model.Resources;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -73,9 +81,9 @@ public class KafkaCluster extends AbstractModel {
     private String initImage;
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE =
+    public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
-    private static final String DEFAULT_INIT_IMAGE =
+    public static final String DEFAULT_INIT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
 
 
@@ -212,6 +220,45 @@ public class KafkaCluster extends AbstractModel {
         kafka.generateCertificates(certManager, secrets);
 
         return kafka;
+    }
+
+    public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly crd, List<Secret> secrets) {
+        KafkaCluster result = new KafkaCluster(crd.getMetadata().getNamespace(),
+                crd.getMetadata().getName(),
+                Labels.fromResource(crd));
+        Kafka kafka = crd.getSpec().getKafka();
+        result.setReplicas(kafka.getReplicas());
+        result.setImage(kafka.getImage());
+        if (kafka.getReadinessProbe() != null) {
+            result.setHealthCheckInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
+            result.setHealthCheckTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
+        }
+        result.setRackConfig(kafka.getRackConfig());
+        result.setInitImage(kafka.getBrokerRackInitImage());
+        result.setJvmOptions(kafka.getJvmOptions());
+        result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
+        result.setMetricsConfig(kafka.getMetrics().entrySet());
+        result.setMetricsEnabled(kafka.getMetrics() != null);
+        result.setZookeeperConnect(crd.getMetadata().getName() + "-zookeeper:2181");
+        // TODO Fix this ugly mess with the two Storages
+        Storage s = new Storage(Storage.StorageType.from(kafka.getStorage().getType()));
+        if (kafka.getStorage() instanceof PersistentClaimStorage) {
+            PersistentClaimStorage pcs = (PersistentClaimStorage) kafka.getStorage();
+            s.withClass(pcs.getStorageClass());
+            s.withDeleteClaim(pcs.isDeleteClaim());
+            if (pcs.getSelector() != null) {
+                s.withSelector(new LabelSelector(null, pcs.getSelector())); // TODO
+            }
+            if (pcs.getSize() != null) {
+                s.withSize(new Quantity("" + MemoryDeserializer.parse(pcs.getSize())));
+            }
+        }
+        result.setStorage(s);
+        result.setUserAffinity(kafka.getAffinity());
+
+        result.generateCertificates(certManager, secrets);
+
+        return result;
     }
 
     /**
@@ -490,7 +537,11 @@ public class KafkaCluster extends AbstractModel {
     public ConfigMap generateMetricsConfigMap() {
         if (isMetricsEnabled()) {
             Map<String, String> data = new HashMap<>();
-            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            HashMap m = new HashMap();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                m.put(entry.getKey(), entry.getValue());
+            }
+            data.put(METRICS_CONFIG_FILE, new JsonObject(m).toString());
             return createConfigMap(getMetricsConfigName(), data);
         } else {
             return null;

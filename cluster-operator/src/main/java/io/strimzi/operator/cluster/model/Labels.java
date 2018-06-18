@@ -104,7 +104,7 @@ public class Labels {
      * Returns the labels of the given {@code resource}.
      */
     public static Labels fromResource(HasMetadata resource) {
-        return new Labels(resource.getMetadata().getLabels());
+        return new Labels(resource.getMetadata().getLabels() != null ? resource.getMetadata().getLabels() : emptyMap());
     }
 
     private Labels(Map<String, String> labels) {

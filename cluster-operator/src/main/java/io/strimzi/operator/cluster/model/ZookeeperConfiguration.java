@@ -6,9 +6,8 @@
 package io.strimzi.operator.cluster.model;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
-
-import io.vertx.core.json.JsonObject;
 
 import static java.util.Arrays.asList;
 
@@ -53,7 +52,7 @@ public class ZookeeperConfiguration extends AbstractConfiguration {
      *
      * @param jsonOptions     Json object with configuration options as key ad value pairs.
      */
-    public ZookeeperConfiguration(JsonObject jsonOptions) {
+    public ZookeeperConfiguration(Iterable<Map.Entry<String, Object>> jsonOptions) {
         super(jsonOptions, FORBIDDEN_OPTIONS, DEFAULTS);
     }
 }

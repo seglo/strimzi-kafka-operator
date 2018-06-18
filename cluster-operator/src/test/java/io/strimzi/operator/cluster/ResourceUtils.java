@@ -4,10 +4,26 @@
  */
 package io.strimzi.operator.cluster;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.strimzi.operator.cluster.crd.model.JsonUtils;
+import io.strimzi.operator.cluster.crd.model.Kafka;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.KafkaAssemblySpec;
+import io.strimzi.operator.cluster.crd.model.Probe;
+import io.strimzi.operator.cluster.crd.model.RackConfig;
+import io.strimzi.operator.cluster.crd.model.Storage;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -19,6 +35,8 @@ import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 
 import java.util.ArrayList;
 import java.util.Base64;
+import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -159,8 +177,8 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                            .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
-                            .withNamespace(clusterCmNamespace)
+                        .withName(AbstractAssemblyOperator.INTERNAL_CA_NAME)
+                        .withNamespace(clusterCmNamespace)
                         .endMetadata()
                         .withData(data)
                         .build()
@@ -172,9 +190,9 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.clientsCASecretName(clusterCmName))
-                            .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .withName(KafkaCluster.clientsCASecretName(clusterCmName))
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
                         .withData(data)
                         .build()
@@ -185,9 +203,9 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.clientsPublicKeyName(clusterCmName))
-                            .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .withName(KafkaCluster.clientsPublicKeyName(clusterCmName))
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
                         .withData(data)
                         .build()
@@ -202,9 +220,9 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.brokersInternalSecretName(clusterCmName))
-                            .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .withName(KafkaCluster.brokersInternalSecretName(clusterCmName))
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
                         .withData(data)
                         .build()
@@ -220,9 +238,9 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                            .withName(KafkaCluster.brokersClientsSecret(clusterCmName))
-                            .withNamespace(clusterCmNamespace)
-                            .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
+                        .withName(KafkaCluster.brokersClientsSecret(clusterCmName))
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(Labels.forCluster(clusterCmName).withType(AssemblyType.KAFKA).toMap())
                         .endMetadata()
                         .withData(data)
                         .build()
@@ -230,6 +248,48 @@ public class ResourceUtils {
         return secrets;
     }
 
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout,
+                                                        String metricsCmJson, String kafkaConfigurationJson) {
+        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout, metricsCmJson, kafkaConfigurationJson, "{}",
+                "{\"type\": \"ephemeral\"}", null, null);
+    }
+
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                    String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                    String kafkaConfigurationJson, String zooConfigurationJson,
+                                                    String storageJson, String topicOperator, String rackJson) {
+        try {
+            KafkaAssembly result = new KafkaAssembly();
+            ObjectMeta meta = new ObjectMeta();
+            result.setMetadata(meta);
+            KafkaAssemblySpec spec = new KafkaAssemblySpec();
+            Kafka kafka = new Kafka();
+            meta.setNamespace(clusterCmNamespace);
+            meta.setName(clusterCmName);
+            meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType(AssemblyType.KAFKA).toMap());
+            kafka.setReplicas(replicas);
+            kafka.setImage(image);
+            Probe livenessProbe = new Probe();
+            livenessProbe.setInitialDelaySeconds(healthDelay);
+            livenessProbe.setTimeoutSeconds(healthTimeout);
+            kafka.setLivenessProbe(livenessProbe);
+            ObjectMapper om = new ObjectMapper();
+            TypeReference<HashMap<String, Object>> typeRef
+                    = new TypeReference<HashMap<String, Object>>() { };
+            kafka.setMetrics(om.readValue(metricsCmJson, typeRef));
+            kafka.setConfig(om.readValue(kafkaConfigurationJson, typeRef));
+            kafka.setStorage(JsonUtils.fromJson(storageJson, Storage.class));
+            kafka.setRackConfig(RackConfig.fromJson(rackJson));
+            spec.setKafka(kafka);
+            spec.setTopicOperator(io.strimzi.operator.cluster.crd.model.TopicOperator.fromJson(topicOperator));
+            result.setSpec(spec);
+            return result;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Generate ConfigMap for Kafka Connect S2I cluster
@@ -325,4 +385,35 @@ public class ResourceUtils {
         }
         return result;
     }
+
+    public static <T> T fromYaml(String resource, Class<T> c) {
+        return fromYaml(resource, c, false);
+    }
+
+    public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
+        URL url = c.getResource(resource);
+        if (url == null) {
+            return null;
+        }
+        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
+        try {
+            return mapper.readValue(url, c);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> String toYamlString(T instance) {
+        ObjectMapper mapper = new YAMLMapper()
+                .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writeValueAsString(instance);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 }

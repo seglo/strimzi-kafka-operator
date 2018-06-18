@@ -81,6 +81,17 @@
             <groupId>io.fabric8</groupId>
             <artifactId>openshift-server-mock</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>crd-generator</artifactId>
+            <version>${project.version}</version>
+            <!-- use provided scope because this is not needed at runtime -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>common-test</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -103,6 +114,50 @@
                                     <mainClass>io.strimzi.operator.cluster.Main</mainClass>
                                 </transformer>
                             </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-crd</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}/target/classes:${pom.basedir}/../crd-generator/target/crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
+                                <argument>--yaml</argument>
+                                <argument>io.strimzi.operator.cluster.crd.model.KafkaAssembly=${pom.basedir}/../examples/install/crd/kafka-crd.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-doc</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <argument>${pom.basedir}/target/classes:${pom.basedir}/../crd-generator/target/crd-generator-${project.version}.jar</argument>
+                                <argument>io.strimzi.crdgenerator.DocGenerator</argument>
+                                <argument>--linker</argument>
+                                <argument>io.strimzi.crdgenerator.KubeLinker</argument>
+                                <argument>https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/</argument>
+                                <argument>io.strimzi.operator.cluster.crd.model.KafkaAssembly=appendix_kafka_crd.adoc</argument>
+                            </arguments>
+                            <workingDirectory>${pom.basedir}/../documentation/book</workingDirectory>
                         </configuration>
                     </execution>
                 </executions>
