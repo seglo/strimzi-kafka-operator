@@ -203,25 +203,34 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
         @Override
         public void evaluate() throws Throwable {
+            // All this fuss just to ensure that the first thrown exception is what propagates
+            Throwable thrown = null;
             try {
                 Runtime.getRuntime().addShutdownHook(hook);
                 before();
                 statement.evaluate();
             } catch (Throwable e) {
-                if (!(e instanceof VirtualMachineError)) {
-                    try {
-                        onError(e);
-                    } catch (Throwable t) {
-                        e.addSuppressed(t);
+                thrown = e;
+                try {
+                    onError(e);
+                } catch (Throwable t) {
+                    thrown.addSuppressed(t);
+                }
+            } finally {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(hook);
+                    runAfter();
+                } catch (Throwable e) {
+                    if (thrown != null) {
+                        thrown.addSuppressed(e);
+                    } else {
+                        thrown = e;
                     }
                 }
-                throw e;
-
-            } finally {
-                Runtime.getRuntime().removeShutdownHook(hook);
-                runAfter();
+                if (thrown != null) {
+                    throw thrown;
+                }
             }
-
         }
 
         /** Runs before the test */
