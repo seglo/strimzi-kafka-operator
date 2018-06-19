@@ -6,12 +6,14 @@ package io.strimzi.operator.cluster.crd.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
 
 import java.util.Map;
 
 /**
  * Representation for persistent claim-based storage.
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public class PersistentClaimStorage extends Storage {
     private String size;
     private String storageClass;

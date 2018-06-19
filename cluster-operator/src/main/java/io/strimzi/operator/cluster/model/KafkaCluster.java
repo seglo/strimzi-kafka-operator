@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -26,14 +25,14 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
-import io.strimzi.operator.cluster.crd.model.MemoryDeserializer;
+import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
 import io.strimzi.operator.cluster.crd.model.JvmOptions;
 import io.strimzi.operator.cluster.crd.model.Kafka;
 import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
 import io.strimzi.operator.cluster.crd.model.RackConfig;
 import io.strimzi.operator.cluster.crd.model.Resources;
+import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
@@ -615,7 +614,7 @@ public class KafkaCluster extends AbstractModel {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.EPHEMERAL) {
+        if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         if (isMetricsEnabled) {
@@ -632,7 +631,7 @@ public class KafkaCluster extends AbstractModel {
 
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+        if (storage instanceof PersistentClaimStorage) {
             pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
         }
         return pvcList;

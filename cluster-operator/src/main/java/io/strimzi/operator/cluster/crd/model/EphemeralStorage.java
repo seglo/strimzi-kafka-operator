@@ -5,10 +5,12 @@
 package io.strimzi.operator.cluster.crd.model;
 
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * Representation for ephemeral storage.
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public class EphemeralStorage extends Storage {
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")

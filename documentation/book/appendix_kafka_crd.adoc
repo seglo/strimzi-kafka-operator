@@ -40,7 +40,7 @@ Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAss
 |integer
 |image                1.2+<.<|The docker image for the pods.
 |string
-|storage              1.2+<.<|Persistent storage (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|storage              1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
 |rackConfig           1.2+<.<|Configuration of the `broker.rack` broker config.
 |<<cluster-operator.strimzi.io-v1alpha1-type-RackConfig,`RackConfig`>>
@@ -192,7 +192,7 @@ Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAss
 |integer
 |image           1.2+<.<|The docker image for the pods.
 |string
-|storage         1.2+<.<|Persistent storage (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
+|storage         1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
 |<<cluster-operator.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<cluster-operator.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
 |livenessProbe   1.2+<.<|Pod liveness checking.
 |<<cluster-operator.strimzi.io-v1alpha1-type-Probe,`Probe`>>
@@ -205,6 +205,8 @@ Used in: <<cluster-operator.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAss
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |metrics         1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|config          1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
 |map
 |resources       1.2+<.<|Resource constraints (limits and requests).
 |<<cluster-operator.strimzi.io-v1alpha1-type-Resources,`Resources`>>

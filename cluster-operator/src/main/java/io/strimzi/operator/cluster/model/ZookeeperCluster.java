@@ -15,8 +15,10 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
 import io.strimzi.operator.cluster.crd.model.JvmOptions;
 import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
 import io.strimzi.operator.cluster.crd.model.Resources;
 import io.strimzi.operator.cluster.crd.model.Zookeeper;
 import io.vertx.core.json.JsonObject;
@@ -290,7 +292,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.EPHEMERAL) {
+        if (storage instanceof EphemeralStorage) {
             volumeList.add(createEmptyDirVolume(VOLUME_NAME));
         }
         if (isMetricsEnabled) {
@@ -302,7 +304,7 @@ public class ZookeeperCluster extends AbstractModel {
 
     private List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>();
-        if (storage.type() == Storage.StorageType.PERSISTENT_CLAIM) {
+        if (storage instanceof PersistentClaimStorage) {
             pvcList.add(createPersistentVolumeClaim(VOLUME_NAME));
         }
         return pvcList;

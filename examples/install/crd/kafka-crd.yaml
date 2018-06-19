@@ -31,7 +31,7 @@ spec:
                   type: string
                   description: The docker image for the pods.
                 storage:
-                  description: Persistent storage (disk). Cannot be updated.
+                  description: Storage configuration (disk). Cannot be updated.
                   type: object
                   properties:
                     class:
@@ -399,7 +399,7 @@ spec:
                   type: string
                   description: The docker image for the pods.
                 storage:
-                  description: Persistent storage (disk). Cannot be updated.
+                  description: Storage configuration (disk). Cannot be updated.
                   type: object
                   properties:
                     class:
@@ -701,6 +701,11 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                config:
+                  type: object
+                  description: 'The zookeeper broker config. Properties with the following
+                    prefixes cannot be set: server., dataDir, dataLogDir, clientPort,
+                    authProvider, quorum.auth, requireClientAuthScheme'
                 resources:
                   description: Resource constraints (limits and requests).
                   type: object

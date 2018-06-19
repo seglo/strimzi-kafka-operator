@@ -9,10 +9,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * The {@code spec} of a {@link KafkaAssembly}.
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator" })
 public class KafkaAssemblySpec {
     private Kafka kafka;

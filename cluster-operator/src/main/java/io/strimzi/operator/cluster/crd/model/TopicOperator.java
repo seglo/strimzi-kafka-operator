@@ -9,10 +9,12 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.OmitFromSchema;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * Representation of a Strimzi-managed topic operator deployment..
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TopicOperator {
     private String watchedNamespace;

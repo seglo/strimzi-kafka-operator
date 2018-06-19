@@ -8,12 +8,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
+import io.sundr.builder.annotations.Buildable;
 
 import java.util.Map;
 
 /**
  * Representation for options to be passed to a JVM.
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class JvmOptions {
 
@@ -46,11 +48,11 @@ public class JvmOptions {
 
     @JsonProperty("-server")
     @Description("-server option to to the JVM")
-    public boolean getServer() {
+    public Boolean getServer() {
         return server;
     }
 
-    public void setServer(boolean server) {
+    public void setServer(Boolean server) {
         this.server = server;
     }
 

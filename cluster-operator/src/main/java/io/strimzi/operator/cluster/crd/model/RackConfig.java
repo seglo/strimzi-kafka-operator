@@ -7,10 +7,12 @@ package io.strimzi.operator.cluster.crd.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * Representation of the rack configuration.
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public class RackConfig {
 
     private String topologyKey;

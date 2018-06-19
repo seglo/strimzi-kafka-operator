@@ -6,14 +6,15 @@ package io.strimzi.operator.cluster.crd.model;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.ZookeeperConfiguration;
+import io.sundr.builder.annotations.Buildable;
 
 import java.util.Map;
 
 /**
  * Representation of a Strimzi-managed Zookeeper "cluster".
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 @JsonPropertyOrder({ "replicas", "image", "storage", "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
 public class Zookeeper extends AbstractSsLike {
 

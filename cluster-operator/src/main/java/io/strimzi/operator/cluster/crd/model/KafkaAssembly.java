@@ -14,6 +14,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
@@ -34,6 +35,7 @@ import io.strimzi.crdgenerator.annotations.Crd;
         )
 )
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public class KafkaAssembly extends CustomResource {
 
     private static final long serialVersionUID = 1L;

@@ -47,6 +47,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.crd.model.CpuMemory;
 import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
 import io.strimzi.operator.cluster.crd.model.JvmOptions;
 import io.strimzi.operator.cluster.crd.model.MemoryDeserializer;
@@ -344,8 +345,9 @@ public abstract class AbstractModel {
 
     protected PersistentVolumeClaim createPersistentVolumeClaim(String name) {
 
+        PersistentClaimStorage storage = (PersistentClaimStorage) this.storage;
         Map<String, Quantity> requests = new HashMap<>();
-        requests.put("storage", storage.size());
+        requests.put("storage", new Quantity(storage.getSize(), null));
 
         PersistentVolumeClaim pvc = new PersistentVolumeClaimBuilder()
                 .withNewMetadata()
@@ -356,8 +358,8 @@ public abstract class AbstractModel {
                 .withNewResources()
                 .withRequests(requests)
                 .endResources()
-                .withStorageClassName(storage.storageClass())
-                .withSelector(storage.selector())
+                .withStorageClassName(storage.getStorageClass())
+                .withNewSelector().withMatchLabels(storage.getSelector()).endSelector()
                 .endSpec()
                 .build();
 
@@ -506,8 +508,11 @@ public abstract class AbstractModel {
             boolean isOpenShift) {
 
         Map<String, String> annotations = new HashMap<>();
+
         annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD),
-                String.valueOf(storage.isDeleteClaim()));
+                String.valueOf(storage instanceof PersistentClaimStorage
+                        && ((PersistentClaimStorage) storage).isDeleteClaim()));
+
 
         Container container = new ContainerBuilder()
                 .withName(name)
@@ -524,7 +529,7 @@ public abstract class AbstractModel {
         PodSecurityContext securityContext = null;
         // if a persistent volume claim is requested and the running cluster is a Kubernetes one
         // there is an hack on volume mounting which needs an "init-container"
-        if ((this.storage.type() == Storage.StorageType.PERSISTENT_CLAIM) && !isOpenShift) {
+        if (this.storage instanceof PersistentClaimStorage && !isOpenShift) {
 
             String chown = String.format("chown -R %d:%d %s",
                     AbstractModel.VOLUME_MOUNT_HACK_GROUPID,
@@ -680,7 +685,7 @@ public abstract class AbstractModel {
     protected ResourceRequirements resources() {
         if (resources != null) {
             ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
-            Resources.CpuMemory limits = resources.getLimits();
+            CpuMemory limits = resources.getLimits();
             if (limits != null
                     && limits.getMilliCpuInt() > 0) {
                 builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
@@ -689,7 +694,7 @@ public abstract class AbstractModel {
                     && limits.getMemoryLong() > 0) {
                 builder.addToLimits("memory", new Quantity(limits.getMemoryString()));
             }
-            Resources.CpuMemory requests = resources.getRequests();
+            CpuMemory requests = resources.getRequests();
             if (requests != null
                     && requests.getMilliCpuInt() > 0) {
                 builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));

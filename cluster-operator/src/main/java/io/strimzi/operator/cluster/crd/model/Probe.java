@@ -6,10 +6,12 @@ package io.strimzi.operator.cluster.crd.model;
 
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.sundr.builder.annotations.Buildable;
 
 /**
  * A representation of the configurable aspect of a probe (used for health checks).
  */
+@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public class Probe {
     private int initialDelaySeconds = 10;
 
