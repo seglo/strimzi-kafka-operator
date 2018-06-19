@@ -108,7 +108,7 @@ public abstract class AbstractSsLike {
         this.metrics = metrics;
     }
 
-    @Description("Persistent storage (disk). Cannot be updated.")
+    @Description("Storage configuration (disk). Cannot be updated.")
     @JsonProperty(required = true)
     public Storage getStorage() {
         return storage;

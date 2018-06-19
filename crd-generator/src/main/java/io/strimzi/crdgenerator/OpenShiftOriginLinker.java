@@ -16,7 +16,7 @@ public class OpenShiftOriginLinker implements Linker {
     }
     @Override
     public String link(KubeLink kubeLink) {
-        https://docs.openshift.org/3.9/rest_api/apis-extensions/v1beta1.DaemonSet.html
+        // https://docs.openshift.org/3.9/rest_api/apis-extensions/v1beta1.DaemonSet.html
         return baseUrl + "apis-" + kubeLink.group() + "/" + kubeLink.version() + "." + kubeLink.kind() + ".html";
     }
 }

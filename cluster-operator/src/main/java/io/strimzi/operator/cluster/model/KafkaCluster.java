@@ -229,6 +229,7 @@ public class KafkaCluster extends AbstractModel {
         Kafka kafka = crd.getSpec().getKafka();
         result.setReplicas(kafka.getReplicas());
         result.setImage(kafka.getImage());
+        // TODO split readiness and liveness checks
         if (kafka.getReadinessProbe() != null) {
             result.setHealthCheckInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
             result.setHealthCheckTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
@@ -240,20 +241,7 @@ public class KafkaCluster extends AbstractModel {
         result.setMetricsConfig(kafka.getMetrics().entrySet());
         result.setMetricsEnabled(kafka.getMetrics() != null);
         result.setZookeeperConnect(crd.getMetadata().getName() + "-zookeeper:2181");
-        // TODO Fix this ugly mess with the two Storages
-        Storage s = new Storage(Storage.StorageType.from(kafka.getStorage().getType()));
-        if (kafka.getStorage() instanceof PersistentClaimStorage) {
-            PersistentClaimStorage pcs = (PersistentClaimStorage) kafka.getStorage();
-            s.withClass(pcs.getStorageClass());
-            s.withDeleteClaim(pcs.isDeleteClaim());
-            if (pcs.getSelector() != null) {
-                s.withSelector(new LabelSelector(null, pcs.getSelector())); // TODO
-            }
-            if (pcs.getSize() != null) {
-                s.withSize(new Quantity("" + MemoryDeserializer.parse(pcs.getSize())));
-            }
-        }
-        result.setStorage(s);
+        result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());
 
         result.generateCertificates(certManager, secrets);

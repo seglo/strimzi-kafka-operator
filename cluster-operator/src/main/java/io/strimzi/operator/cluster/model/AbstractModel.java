@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -46,7 +47,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
 import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.operator.cluster.crd.model.MemoryDeserializer;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
 import io.strimzi.operator.cluster.crd.model.Resources;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -97,7 +101,7 @@ public abstract class AbstractModel {
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String metricsConfigName;
 
-    protected Storage storage;
+    protected io.strimzi.operator.cluster.crd.model.Storage storage;
 
     protected AbstractConfiguration configuration;
 
@@ -195,11 +199,33 @@ public abstract class AbstractModel {
         return null;
     }
 
-    public Storage getStorage() {
+    public io.strimzi.operator.cluster.crd.model.Storage getStorage() {
         return storage;
     }
 
+    /**
+     * @deprecated Use {@link #setStorage(io.strimzi.operator.cluster.crd.model.Storage)}
+     */
+    @Deprecated
     protected void setStorage(Storage storage) {
+        switch (storage.type()) {
+            case EPHEMERAL:
+                this.storage = new EphemeralStorage();
+                break;
+            case PERSISTENT_CLAIM:
+                PersistentClaimStorage pcs = new PersistentClaimStorage();
+                pcs.setDeleteClaim(storage.isDeleteClaim());
+                if (storage.selector() != null) {
+                    pcs.setSelector(storage.selector().getMatchLabels());
+                }
+                pcs.setSize(MemoryDeserializer.format(Long.parseLong(storage.size().getAmount())));
+                pcs.setStorageClass(storage.storageClass());
+                this.storage = pcs;
+        }
+    }
+
+    protected void setStorage(io.strimzi.operator.cluster.crd.model.Storage storage) {
+
         this.storage = storage;
     }
 

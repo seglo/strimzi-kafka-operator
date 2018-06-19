@@ -15,18 +15,13 @@ import static java.util.Arrays.asList;
  * Class for handling Zookeeper configuration passed by the user
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
+    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
     private static final List<String> FORBIDDEN_OPTIONS;
     private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
-                "server.",
-                "dataDir",
-                "dataLogDir",
-                "clientPort",
-                "authProvider",
-                "quorum.auth",
-                "requireClientAuthScheme");
+                FORBIDDEN_PREFIXES.split(" *, *"));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("timeTick", "2000");

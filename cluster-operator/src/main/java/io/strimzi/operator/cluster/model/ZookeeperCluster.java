@@ -16,7 +16,9 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 import io.strimzi.operator.cluster.crd.model.Resources;
+import io.strimzi.operator.cluster.crd.model.Zookeeper;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -143,6 +145,29 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
         zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
+        return zk;
+    }
+
+    public static ZookeeperCluster fromCrd(KafkaAssembly kafkaAssembly) {
+        ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
+                Labels.fromResource(kafkaAssembly));
+        Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
+        zk.setReplicas(zookeeper.getReplicas());
+        zk.setImage(zookeeper.getImage());
+        // TODO split readiness and liveness checks
+        if (zookeeper.getReadinessProbe() != null) {
+            zk.setHealthCheckInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
+            zk.setHealthCheckTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (zookeeper.getMetrics() != null) {
+            zk.setMetricsEnabled(true);
+            zk.setMetricsConfig(zookeeper.getMetrics().entrySet());
+        }
+        zk.setStorage(zookeeper.getStorage());
+        zk.setConfiguration(new ZookeeperConfiguration(zookeeper.getConfig().entrySet()));
+        zk.setResources(zookeeper.getResources());
+        zk.setJvmOptions(zookeeper.getJvmOptions());
+        zk.setUserAffinity(zookeeper.getAffinity());
         return zk;
     }
 
