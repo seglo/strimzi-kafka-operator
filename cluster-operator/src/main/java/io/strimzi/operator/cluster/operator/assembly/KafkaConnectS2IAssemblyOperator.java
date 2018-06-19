@@ -5,8 +5,12 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapList;
+import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
@@ -26,7 +30,6 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +41,7 @@ import java.util.List;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
@@ -86,7 +89,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                    .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
+                    .compose(i -> resourceOperator.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
@@ -107,7 +110,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
             CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
-                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.metricsConfigName(clusterName), null),
+                resourceOperator.reconcile(namespace, KafkaConnectS2ICluster.metricsConfigName(clusterName), null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),
                 imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
                 imagesStreamOperations.reconcile(namespace, clusterName, null),
@@ -126,7 +129,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator {
         result.addAll(deploymentConfigOperations.list(namespace, selector));
         result.addAll(imagesStreamOperations.list(namespace, selector));
         result.addAll(buildConfigOperations.list(namespace, selector));
-        result.addAll(configMapOperations.list(namespace, selector));
+        result.addAll(resourceOperator.list(namespace, selector));
         return result;
     }
 

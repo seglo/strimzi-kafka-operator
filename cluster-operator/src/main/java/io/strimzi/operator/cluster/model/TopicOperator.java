@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -89,6 +90,11 @@ public class TopicOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
         this.topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+    }
+
+    public static TopicOperator fromCrd(KafkaAssembly assemblyCm) {
+        // TODO
+        return null;
     }
 
     public void setWatchedNamespace(String watchedNamespace) {
