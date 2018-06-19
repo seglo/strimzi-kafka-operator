@@ -126,7 +126,7 @@ public class ClusterOperator extends AbstractVerticle {
                             return;
                         }
 
-                        final AbstractAssemblyOperator cluster;
+                        final AbstractAssemblyOperator<?, ?, ?, ?, ?> cluster;
                         if (type == null) {
                             log.warn("Missing label {} in ConfigMap {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
                             return;

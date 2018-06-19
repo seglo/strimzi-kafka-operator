@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -22,6 +23,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
@@ -180,13 +182,13 @@ public class KafkaAssemblyOperatorTest {
         createCluster(context, getConfigMap("foo"), getInitialSecrets());
     }
 
-    private void createCluster(TestContext context, ConfigMap clusterCm, List<Secret> secrets) {
-
+    private void createCluster(TestContext context, KafkaAssembly clusterCm, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromConfigMap(certManager, clusterCm, secrets);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromConfigMap(clusterCm);
         TopicOperator topicOperator = TopicOperator.fromConfigMap(clusterCm);
 
         // create CM, Service, headless service, statefulset and so on
+        KafkaAssemblyCrdOperator mockKafkaOps = mock(KafkaAssemblyCrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
@@ -198,7 +200,8 @@ public class KafkaAssemblyOperatorTest {
         // Create a CM
         String clusterCmName = clusterCm.getMetadata().getName();
         String clusterCmNamespace = clusterCm.getMetadata().getNamespace();
-        when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        //when(mockCmOps.get(clusterCmNamespace, clusterCmName)).thenReturn(clusterCm);
+        when(mockKafkaOps.get(clusterCmNamespace, clusterCmName)).thenReturn(null);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
         when(mockServiceOps.endpointReadiness(anyString(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -233,6 +236,7 @@ public class KafkaAssemblyOperatorTest {
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
+                mockKafkaOps,
                 mockCmOps,
                 mockServiceOps, mockZsOps, mockKsOps,
                 mockPvcOps, mockDepOps, mockSecretOps);
@@ -426,7 +430,7 @@ public class KafkaAssemblyOperatorTest {
         });
     }
 
-    private ConfigMap getConfigMap(String clusterCmName) {
+    private KafkaAssembly getConfigMap(String clusterCmName) {
         String clusterCmNamespace = "test";
         int replicas = 3;
         String image = "bar";
