@@ -33,7 +33,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
-    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
+    private static final String METRICS_CONFIG_SUFFIX = "-metrics-config";
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =

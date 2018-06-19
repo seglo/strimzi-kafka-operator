@@ -83,7 +83,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator {
         String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
         CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
-            configMapOperations.reconcile(namespace, KafkaConnectCluster.metricsConfigName(name), null),
+            configMapOperations.reconcile(namespace, KafkaConnectCluster.metricsConfigName(assemblyName), null),
             deploymentOperations.reconcile(namespace, name, null))
             .map((Void) null).setHandler(handler);
     }
