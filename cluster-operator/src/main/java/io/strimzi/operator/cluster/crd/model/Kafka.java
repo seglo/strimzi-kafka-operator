@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -24,6 +26,7 @@ public class Kafka extends AbstractSsLike {
     private String brokerRackInitImage = KafkaCluster.DEFAULT_INIT_IMAGE;
 
     private RackConfig rackConfig;
+    private Map<String,Object> additionalProperties;
 
     public Kafka() {
         this.image = KafkaCluster.DEFAULT_IMAGE;
@@ -54,5 +57,15 @@ public class Kafka extends AbstractSsLike {
 
     public void setRackConfig(RackConfig rackConfig) {
         this.rackConfig = rackConfig;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

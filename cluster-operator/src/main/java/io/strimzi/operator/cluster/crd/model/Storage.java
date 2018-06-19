@@ -4,11 +4,15 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
+
+import java.util.Map;
 
 /**
  * Abstract baseclass for different representations of storage, discriminated by {@link #getType() type}.
@@ -25,9 +29,20 @@ import io.strimzi.crdgenerator.annotations.Description;
 public abstract class Storage {
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
+    private Map<String, Object> additionalProperties;
 
     @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
     @JsonIgnore
     public abstract String getType();
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
+    }
 }
 

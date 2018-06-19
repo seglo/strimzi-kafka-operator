@@ -4,12 +4,16 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 /**
  * The {@code spec} of a {@link KafkaAssembly}.
@@ -20,6 +24,7 @@ public class KafkaAssemblySpec {
     private Kafka kafka;
     private Zookeeper zookeeper;
     private TopicOperator topicOperator;
+    private Map<String, Object> additionalProperties;
 
     @Description("Configuration of the Kafka cluster")
     @JsonProperty(required = true)
@@ -48,6 +53,16 @@ public class KafkaAssemblySpec {
 
     public void setTopicOperator(TopicOperator topicOperator) {
         this.topicOperator = topicOperator;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
     @Override

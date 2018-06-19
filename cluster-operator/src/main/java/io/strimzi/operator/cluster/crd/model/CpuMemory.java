@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -11,11 +13,14 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
 
+import java.util.Map;
+
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class CpuMemory {
 
     private String memory;
     private String milliCpu;
+    private Map<String, Object> additionalProperties;
 
     public CpuMemory() {
     }
@@ -70,5 +75,15 @@ public class CpuMemory {
 
     public void setMilliCpu(String milliCpu) {
         this.milliCpu = milliCpu;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

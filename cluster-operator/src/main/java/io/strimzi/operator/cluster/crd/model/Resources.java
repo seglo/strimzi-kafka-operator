@@ -4,9 +4,13 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 /**
  * Representation for resource containts.
@@ -14,6 +18,8 @@ import io.sundr.builder.annotations.Buildable;
 @Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Resources {
+
+    private Map<String,Object> additionalProperties;
 
     public Resources() {
     }
@@ -47,6 +53,16 @@ public class Resources {
 
     public static Resources fromJson(String json) {
         return JsonUtils.fromJson(json, Resources.class);
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
 }

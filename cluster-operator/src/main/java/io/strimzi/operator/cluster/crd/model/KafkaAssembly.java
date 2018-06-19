@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +17,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 /**
  * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
@@ -40,12 +44,13 @@ public class KafkaAssembly extends CustomResource {
 
     private static final long serialVersionUID = 1L;
     public static final String RESOURCE_KIND = "Kafka";
-    public static final String RESOURCE_GROUP = "cluster-operator.strimzi.io";
+    public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_NAME = RESOURCE_KIND + "." + RESOURCE_GROUP;
 
     private String apiVersion;
     private ObjectMeta metadata;
     private transient KafkaAssemblySpec spec;
+    private Map<String, Object> additionalProperties;
 
     @Override
     public String getApiVersion() {
@@ -89,5 +94,15 @@ public class KafkaAssembly extends CustomResource {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

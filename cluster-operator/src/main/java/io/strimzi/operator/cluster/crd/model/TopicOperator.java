@@ -4,12 +4,16 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.OmitFromSchema;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 /**
  * Representation of a Strimzi-managed topic operator deployment..
@@ -24,6 +28,7 @@ public class TopicOperator {
     private int topicMetadataMaxAttempts = io.strimzi.operator.cluster.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     private Resources resources;
     private Affinity affinity;
+    private Map<String, Object> additionalProperties;
 
     @Description("The namespace the Topic Operator should watch.")
     public String getWatchedNamespace() {
@@ -109,6 +114,16 @@ public class TopicOperator {
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 
     public static TopicOperator fromJson(String json) {

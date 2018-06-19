@@ -4,10 +4,14 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 /**
  * Representation of the rack configuration.
@@ -16,6 +20,7 @@ import io.sundr.builder.annotations.Buildable;
 public class RackConfig {
 
     private String topologyKey;
+    private Map<String, Object> additionalProperties;
 
     public RackConfig() {
 
@@ -39,5 +44,15 @@ public class RackConfig {
             throw new IllegalArgumentException("In rack configuration the 'topologyKey' field is mandatory");
         }
         return rackConfig;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.crd.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.operator.cluster.model.ZookeeperConfiguration;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class Zookeeper extends AbstractSsLike {
 
     private Map<String, Object> config;
+    private Map<String, Object> additionalProperties;
 
     public Zookeeper() {
         this.image = "strimzi/kafka:latest";
@@ -31,5 +34,15 @@ public class Zookeeper extends AbstractSsLike {
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }
