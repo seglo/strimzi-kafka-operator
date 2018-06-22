@@ -32,12 +32,14 @@ import static java.util.Collections.unmodifiableMap;
 
 class Property implements AnnotatedElement {
     private final String name;
+    private final Class<?> owner;
 
     private AnnotatedElement a;
     private Member m;
     private PropertyType type;
     public Property(Method method) {
         name = propertyName(method);
+        owner = method.getDeclaringClass();
         a = method;
         m = method;
         this.type = new PropertyType(method.getReturnType(), method.getGenericReturnType());
@@ -45,6 +47,7 @@ class Property implements AnnotatedElement {
 
     public Property(Field field) {
         name = field.getName();
+        owner = field.getDeclaringClass();
         a = field;
         m = field;
         this.type = new PropertyType(field.getType(), field.getGenericType());
@@ -221,8 +224,11 @@ class Property implements AnnotatedElement {
         return m.getDeclaringClass();
     }
 
-
     public PropertyType getType() {
         return type;
+    }
+
+    public String toString() {
+        return owner.getName() + "." + name;
     }
 }
