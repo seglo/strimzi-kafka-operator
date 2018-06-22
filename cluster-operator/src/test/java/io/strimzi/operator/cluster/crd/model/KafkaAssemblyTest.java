@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.crd.model;
 
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,10 +38,9 @@ public class KafkaAssemblyTest {
     }
 
     @Test
-    @Ignore
     public void kafkaRoundTrip() throws IOException {
         KafkaAssembly model = fromYaml("kafka.yaml", KafkaAssembly.class);
-        assertEquals("cluster-operator.strimzi.io/v1alpha1", model.getApiVersion());
+        assertEquals(KafkaAssembly.RESOURCE_GROUP + "/" + KafkaAssembly.VERSION, model.getApiVersion());
         assertEquals("Kafka", model.getKind());
 
         ObjectMeta metadata = model.getMetadata();

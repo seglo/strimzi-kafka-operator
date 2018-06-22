@@ -218,7 +218,9 @@ public abstract class AbstractModel {
                 if (storage.selector() != null) {
                     pcs.setSelector(storage.selector().getMatchLabels());
                 }
-                pcs.setSize(MemoryDeserializer.format(Long.parseLong(storage.size().getAmount())));
+                if (storage.size() != null) {
+                    pcs.setSize(MemoryDeserializer.format(Long.parseLong(storage.size().getAmount())));
+                }
                 pcs.setStorageClass(storage.storageClass());
                 this.storage = pcs;
         }
@@ -686,21 +688,21 @@ public abstract class AbstractModel {
             ResourceRequirementsBuilder builder = new ResourceRequirementsBuilder();
             CpuMemory limits = resources.getLimits();
             if (limits != null
-                    && limits.getMilliCpuInt() > 0) {
+                    && limits.milliCpuAsInt() > 0) {
                 builder.addToLimits("cpu", new Quantity(limits.getMilliCpu()));
             }
             if (limits != null
-                    && limits.getMemoryLong() > 0) {
-                builder.addToLimits("memory", new Quantity(limits.getMemoryString()));
+                    && limits.memoryAsLong() > 0) {
+                builder.addToLimits("memory", new Quantity(limits.getMemory()));
             }
             CpuMemory requests = resources.getRequests();
             if (requests != null
-                    && requests.getMilliCpuInt() > 0) {
+                    && requests.milliCpuAsInt() > 0) {
                 builder.addToRequests("cpu", new Quantity(requests.getMilliCpu()));
             }
             if (requests != null
-                    && requests.getMemoryLong() > 0) {
-                builder.addToRequests("memory", new Quantity(requests.getMemoryString()));
+                    && requests.memoryAsLong() > 0) {
+                builder.addToRequests("memory", new Quantity(requests.getMemory()));
             }
             return builder.build();
         }

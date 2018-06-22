@@ -1,5 +1,5 @@
 ---
-apiVersion: "cluster-operator.strimzi.io/v1alpha1"
+apiVersion: "kafka.strimzi.io/v1alpha1"
 kind: "Kafka"
 metadata:
   finalizers: []
@@ -13,9 +13,7 @@ spec:
       type: "persistent-claim"
       size: "500Gi"
       deleteClaim: false
-    resources:
-      limits:
-        memory: "5Gi"
+    brokerRackInitImage: "strimzi/init-kafka:latest"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -36,17 +34,16 @@ spec:
         name: "kafka_server_$1_$2_total"
         labels:
           topic: "$3"
+    resources:
+      limits:
+        memory: "5Gi"
     config:
       min.insync.replicas: 3
-    brokerRackInitImage: "strimzi/init-kafka:latest"
   zookeeper:
     replicas: 3
     image: "strimzi/zookeeper:latest"
     storage:
       type: "ephemeral"
-    resources:
-      limits:
-        memory: "512Mi"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -57,9 +54,16 @@ spec:
       -Xmx: "512Mi"
       -Xms: "512Mi"
     metrics: {}
+    resources:
+      limits:
+        memory: "512Mi"
+    config: {}
   topicOperator:
     watchedNamespace: "my-ns"
     image: "strimzi/topic-operator:latest"
     reconciliationIntervalSeconds: "900000"
     zookeeperSessionTimeoutSeconds: "20000"
     topicMetadataMaxAttempts: 6
+    reconciliationInterval: "900000"
+    zookeeperSessionTimeout: "20000"
+  someExtraThing: true

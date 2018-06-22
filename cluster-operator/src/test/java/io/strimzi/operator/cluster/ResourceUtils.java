@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.crd.model.KafkaAssemblySpec;
 import io.strimzi.operator.cluster.crd.model.Probe;
 import io.strimzi.operator.cluster.crd.model.RackConfig;
 import io.strimzi.operator.cluster.crd.model.Storage;
+import io.strimzi.operator.cluster.crd.model.Zookeeper;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -97,6 +98,14 @@ public class ResourceUtils {
                                                         String metricsCmJson, String kafkaConfigurationJson,
                                                         String zooConfigurationJson) {
         return createKafkaClusterConfigMap(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
+                "{\"type\": \"ephemeral\"}", null, null);
+    }
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                        String image, int healthDelay, int healthTimeout,
+                                                        String metricsCmJson, String kafkaConfigurationJson,
+                                                        String zooConfigurationJson) {
+        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
                 "{\"type\": \"ephemeral\"}", null, null);
     }
@@ -263,27 +272,50 @@ public class ResourceUtils {
         try {
             KafkaAssembly result = new KafkaAssembly();
             ObjectMeta meta = new ObjectMeta();
-            result.setMetadata(meta);
-            KafkaAssemblySpec spec = new KafkaAssemblySpec();
-            Kafka kafka = new Kafka();
             meta.setNamespace(clusterCmNamespace);
             meta.setName(clusterCmName);
             meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType(AssemblyType.KAFKA).toMap());
+            result.setMetadata(meta);
+
+            KafkaAssemblySpec spec = new KafkaAssemblySpec();
+
+            Kafka kafka = new Kafka();
             kafka.setReplicas(replicas);
             kafka.setImage(image);
             Probe livenessProbe = new Probe();
             livenessProbe.setInitialDelaySeconds(healthDelay);
             livenessProbe.setTimeoutSeconds(healthTimeout);
             kafka.setLivenessProbe(livenessProbe);
+            kafka.setReadinessProbe(livenessProbe);
             ObjectMapper om = new ObjectMapper();
             TypeReference<HashMap<String, Object>> typeRef
                     = new TypeReference<HashMap<String, Object>>() { };
-            kafka.setMetrics(om.readValue(metricsCmJson, typeRef));
-            kafka.setConfig(om.readValue(kafkaConfigurationJson, typeRef));
+            if (metricsCmJson != null) {
+                kafka.setMetrics(om.readValue(metricsCmJson, typeRef));
+            }
+            if (kafkaConfigurationJson != null) {
+                kafka.setConfig(om.readValue(kafkaConfigurationJson, typeRef));
+            }
             kafka.setStorage(JsonUtils.fromJson(storageJson, Storage.class));
             kafka.setRackConfig(RackConfig.fromJson(rackJson));
             spec.setKafka(kafka);
+
+            Zookeeper zk = new Zookeeper();
+            zk.setReplicas(replicas);
+            zk.setImage(image + "-zk");
+            zk.setLivenessProbe(livenessProbe);
+            zk.setReadinessProbe(livenessProbe);
+            if (zooConfigurationJson != null) {
+                zk.setConfig(om.readValue(zooConfigurationJson, typeRef));
+            }
+            zk.setStorage(JsonUtils.fromJson(storageJson, Storage.class));
+            if (metricsCmJson != null) {
+                zk.setMetrics(om.readValue(metricsCmJson, typeRef));
+            }
+
             spec.setTopicOperator(io.strimzi.operator.cluster.crd.model.TopicOperator.fromJson(topicOperator));
+
+            spec.setZookeeper(zk);
             result.setSpec(spec);
             return result;
         } catch (IOException e) {

@@ -1,8 +1,9 @@
-apiVersion: cluster-operator.strimzi.io/v1alpha1
+apiVersion: kafka.strimzi.io/v1alpha1
 kind: Kafka
 metadata:
   name: strimzi-ephemeral
 spec:
+  someExtraThing: true
   kafka:
     replicas: 3
     image: "strimzi/kafka:latest"

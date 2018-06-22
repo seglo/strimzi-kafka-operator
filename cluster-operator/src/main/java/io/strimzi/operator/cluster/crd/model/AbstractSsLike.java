@@ -10,12 +10,15 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A baseclass for {@link Kafka} and {@link Zookeeper} with all their common properties.
  */
+@Buildable(editableEnabled = false, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
 public abstract class AbstractSsLike {
 
     protected int replicas;
@@ -30,7 +33,7 @@ public abstract class AbstractSsLike {
 
     protected JvmOptions jvmOptions;
 
-    protected Map<String, Object> metrics;
+    protected Map<String, Object> metrics = new HashMap<>(0);
 
     protected Storage storage;
 

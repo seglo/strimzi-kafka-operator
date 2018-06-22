@@ -5,8 +5,11 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinitionList;
+import io.fabric8.kubernetes.api.model.apiextensions.DoneableCustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
 import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
@@ -25,7 +28,9 @@ public class KafkaAssemblyCrdOperator extends AbstractResourceOperator<Kubernete
 
     @Override
     protected MixedOperation<KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> operation() {
-        CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaAssembly.RESOURCE_NAME).get();
+        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, DoneableCustomResourceDefinition, Resource<CustomResourceDefinition, DoneableCustomResourceDefinition>> x = client.customResourceDefinitions();
+        Resource<CustomResourceDefinition, DoneableCustomResourceDefinition> y = x.withName(KafkaAssembly.RESOURCE_NAME);
+        CustomResourceDefinition crd = y.get();
         return client.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
     }
 }

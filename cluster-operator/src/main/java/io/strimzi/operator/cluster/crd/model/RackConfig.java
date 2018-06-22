@@ -11,16 +11,21 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Representation of the rack configuration.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 public class RackConfig {
 
     private String topologyKey;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public RackConfig() {
 

@@ -10,7 +10,11 @@ import io.sundr.builder.annotations.Buildable;
 /**
  * Representation for ephemeral storage.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 public class EphemeralStorage extends Storage {
 
     @Description("Must be `" + TYPE_EPHEMERAL + "`")

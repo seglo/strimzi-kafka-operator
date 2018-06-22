@@ -13,18 +13,23 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * The {@code spec} of a {@link KafkaAssembly}.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator" })
 public class KafkaAssemblySpec {
     private Kafka kafka;
     private Zookeeper zookeeper;
     private TopicOperator topicOperator;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Configuration of the Kafka cluster")
     @JsonProperty(required = true)

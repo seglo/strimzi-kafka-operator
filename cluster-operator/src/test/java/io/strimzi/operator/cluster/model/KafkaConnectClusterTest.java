@@ -66,7 +66,7 @@ public class KafkaConnectClusterTest {
     private final KafkaConnectCluster kc = KafkaConnectCluster.fromConfigMap(cm);
 
     @Rule
-    public ResourceTester<KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnectCluster::fromConfigMap);
+    public ResourceTester<ConfigMap, KafkaConnectCluster> resourceTester = new ResourceTester<>(ConfigMap.class, KafkaConnectCluster::fromConfigMap);
 
     @Test
     public void testMetricsConfigMap() {

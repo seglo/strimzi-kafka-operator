@@ -10,16 +10,21 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Representation for resource containts.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Resources {
 
-    private Map<String,Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Resources() {
     }

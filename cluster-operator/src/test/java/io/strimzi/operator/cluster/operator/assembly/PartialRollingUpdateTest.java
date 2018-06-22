@@ -4,25 +4,30 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.Reconciliation;
+import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
+import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
+import io.strimzi.operator.cluster.crd.model.JsonUtils;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.KafkaAssemblyBuilder;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -35,8 +40,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
-import static io.strimzi.operator.cluster.ResourceUtils.map;
 import static io.strimzi.operator.cluster.ResourceUtils.set;
+import static java.util.Collections.emptyMap;
 
 @RunWith(VertxUnitRunner.class)
 public class PartialRollingUpdateTest {
@@ -47,7 +52,7 @@ public class PartialRollingUpdateTest {
     private static final String CLUSTER_NAME = "my-cluster";
 
     private Vertx vertx;
-    private ConfigMap cluster;
+    private KafkaAssembly cluster;
     private StatefulSet kafkaSs;
     private StatefulSet zkSs;
     private Pod kafkaPod0;
@@ -55,6 +60,7 @@ public class PartialRollingUpdateTest {
     private Pod kafkaPod2;
     private Pod kafkaPod3;
     private Pod kafkaPod4;
+    private KafkaAssemblyCrdOperator kafkaops;
     private ConfigMapOperator cmops;
     private ServiceOperator svcops;
     private KafkaSetOperator ksops;
@@ -72,27 +78,43 @@ public class PartialRollingUpdateTest {
     public void before(TestContext context) {
         this.vertx = Vertx.vertx();
 
-        this.cluster = new ConfigMapBuilder()
-                .withNewMetadata()
-                .withName(CLUSTER_NAME)
+        this.cluster = new KafkaAssemblyBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName(CLUSTER_NAME)
                 .withNamespace(NAMESPACE)
-                .withLabels(Labels.forKind("cluster").withType(AssemblyType.KAFKA).toMap())
-                .endMetadata()
-                .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(5),
-                        KafkaCluster.KEY_STORAGE, "{\"type\": \"persistent-claim\", " +
-                                "\"size\": \"123\", " +
-                                "\"class\": \"foo\"," +
-                                "\"delete-claim\": true}",
-                        KafkaCluster.KEY_METRICS_CONFIG, "{}",
-                        ZookeeperCluster.KEY_REPLICAS, String.valueOf(3),
-                        ZookeeperCluster.KEY_STORAGE, "{\"type\": \"persistent-claim\", " +
-                                "\"size\": \"123\", " +
-                                "\"class\": \"foo\"," +
-                                "\"delete-claim\": true}",
-                        ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
-                        TopicOperator.KEY_CONFIG, "{}"))
+                .build())
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(5)
+                        .withNewPersistentClaimStorageStorage()
+                            .withSize("123")
+                            .withStorageClass("foo")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorageStorage()
+                        .withMetrics(emptyMap())
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(3)
+                        .withNewPersistentClaimStorageStorage()
+                            .withSize("123")
+                            .withStorageClass("foo")
+                            .withDeleteClaim(true)
+                        .endPersistentClaimStorageStorage()
+                        .withMetrics(emptyMap())
+                    .endZookeeper()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
+                .endSpec()
                 .build();
-        KubernetesClient bootstrapClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
+
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+
+        KubernetesClient bootstrapClient = new MockKube()
+                .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withInitialInstances(Collections.singleton(cluster))
+                .end()
+                .build();
+
+        kafkaops = new KafkaAssemblyCrdOperator(vertx, bootstrapClient);
         cmops = new ConfigMapOperator(vertx, bootstrapClient);
         svcops = new ServiceOperator(vertx, bootstrapClient);
         ksops = new KafkaSetOperator(vertx, bootstrapClient, 60_000L);
@@ -102,7 +124,7 @@ public class PartialRollingUpdateTest {
         secretops = new SecretOperator(vertx, bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(),
-                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("bootstrap reconciliation");
         Async createAsync = context.async();
@@ -127,11 +149,22 @@ public class PartialRollingUpdateTest {
     }
 
     private void startKube() {
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+
         this.mockClient = new MockKube()
-                .withInitialCms(Collections.singleton(cluster))
+                .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withInitialInstances(Collections.singleton(cluster))
+                .end()
                 .withInitialStatefulSets(set(zkSs, kafkaSs))
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
                 .build();
+
+
+        /*this.mockClient = new MockKube()
+                .withInitialCms(Collections.singleton(cluster))
+                .withInitialStatefulSets(set(zkSs, kafkaSs))
+                .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))
+                .build();*/
         cmops = new ConfigMapOperator(vertx, mockClient);
         svcops = new ServiceOperator(vertx, mockClient);
         ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
@@ -142,7 +175,7 @@ public class PartialRollingUpdateTest {
 
         this.kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(),
-                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 
@@ -186,6 +219,7 @@ public class PartialRollingUpdateTest {
         LOGGER.info("Recovery reconciliation");
         Async async = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
+            if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
             for (int i = 0; i <= 2; i++) {
                 Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, i)).get();

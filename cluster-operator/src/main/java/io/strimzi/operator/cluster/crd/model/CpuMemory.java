@@ -12,55 +12,63 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.Type;
+import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
+
 
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class CpuMemory {
 
     private String memory;
     private String milliCpu;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Buildable(
+            editableEnabled = false,
+            generateBuilderPackage = true,
+            builderPackage = "io.strimzi.operator.cluster.crd.model"
+    )
     public CpuMemory() {
     }
 
-    public CpuMemory(long memory, int milliCpu) {
-        this.memory = MemoryDeserializer.format(memory);
+    public CpuMemory(long mem, int milliCpu) {
+        this.memory = MemoryDeserializer.format(mem);
         this.milliCpu = MilliCpuDeserializer.format(milliCpu);
     }
 
     /** The memory in bytes */
     @JsonIgnore
-    public long getMemoryLong() {
+    public long memoryAsLong() {
         return memory == null ? 0 : MemoryDeserializer.parse(memory);
     }
 
-    public void setMemoryLong(long memory) {
+    public void memoryAsLong(long memory) {
         this.memory = MemoryDeserializer.format(memory);
     }
 
     /** The memory in Kubernetes syntax. */
     @Description("Memory")
-    @JsonProperty("memory")
     @Pattern("[0-9]+([kKmMgGtTpPeE]i?)?$")
     @Type("string")
-    public String getMemoryString() {
+    @JsonProperty("memory")
+    public String getMemory() {
         return memory;
     }
 
-    public void setMemoryString(String memory) {
-        this.memory = memory;
+    public void setMemory(String mem) {
+        this.memory = mem;
     }
 
 
     /** The CPUs in "millicpus". */
     @JsonIgnore
-    public int getMilliCpuInt() {
+    public int milliCpuAsInt() {
         return MilliCpuDeserializer.parse(milliCpu);
     }
 
-    public void setMilliCpuInt(int milliCpu) {
+    public void milliCpuAsInt(int milliCpu) {
         this.milliCpu = MilliCpuDeserializer.format(milliCpu);
     }
 

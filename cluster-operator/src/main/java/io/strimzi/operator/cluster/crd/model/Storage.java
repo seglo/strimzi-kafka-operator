@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -29,7 +30,7 @@ import java.util.Map;
 public abstract class Storage {
     public static final String TYPE_EPHEMERAL = "ephemeral";
     public static final String TYPE_PERSISTENT_CLAIM = "persistent-claim";
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Storage type, must be either 'ephemeral' or 'persistent-claim'.")
     @JsonIgnore
@@ -43,6 +44,16 @@ public abstract class Storage {
     @JsonAnySetter
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    public static boolean deleteClaim(Storage storage) {
+        return storage instanceof PersistentClaimStorage
+                && ((PersistentClaimStorage) storage).isDeleteClaim();
+    }
+
+    public static String storageClass(Storage storage) {
+        return storage instanceof PersistentClaimStorage ?
+                ((PersistentClaimStorage) storage).getStorageClass() : null;
     }
 }
 

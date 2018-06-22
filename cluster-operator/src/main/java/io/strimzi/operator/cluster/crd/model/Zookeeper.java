@@ -11,17 +11,22 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.operator.cluster.model.ZookeeperConfiguration;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Representation of a Strimzi-managed Zookeeper "cluster".
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 @JsonPropertyOrder({ "replicas", "image", "storage", "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
 public class Zookeeper extends AbstractSsLike {
 
-    private Map<String, Object> config;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> config = new HashMap<>(0);
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Zookeeper() {
         this.image = "strimzi/kafka:latest";

@@ -13,10 +13,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
 import io.strimzi.operator.cluster.crd.model.RackConfig;
-import io.vertx.core.json.JsonObject;
+import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -40,12 +40,13 @@ public class KafkaClusterTest {
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
+
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
-    private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
+    private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
 
     @Rule
-    public ResourceTester<KafkaCluster> resourceTester = new ResourceTester<>(KafkaCluster::fromConfigMap);
+    public ResourceTester<KafkaAssembly, KafkaCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, KafkaCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
@@ -102,33 +103,31 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet ss = kc.generateStatefulSet(true);
-        //checkStatefulSet(ss, cm, true);
+        checkStatefulSet(ss, kafkaAssembly, true);
     }
 
     @Test
     public void testGenerateStatefulSetWithRack() {
-        ConfigMap cm =
-                ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                        metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
-                        null, "{\"topologyKey\": \"rack-key\"}");
-        KafkaCluster kc = KafkaCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+                metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
+                null, "{\"topologyKey\": \"rack-key\"}");
+        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
-        checkStatefulSet(ss, cm, true);
+        checkStatefulSet(ss, kafkaAssembly, true);
     }
 
     @Test
     public void testGenerateStatefulSetWithInitContainers() {
-
-        ConfigMap cm =
-                ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
+        KafkaAssembly kafkaAssembly =
+                ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                         metricsCmJson, configurationJson, "{}", "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\" }",
                         null, "{\"topologyKey\": \"rack-key\"}");
-        KafkaCluster kc = KafkaCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
+        KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(false);
-        checkStatefulSet(ss, cm, false);
+        checkStatefulSet(ss, kafkaAssembly, false);
     }
 
-    private void checkStatefulSet(StatefulSet ss, ConfigMap cm, boolean isOpenShift) {
+    private void checkStatefulSet(StatefulSet ss, KafkaAssembly cm, boolean isOpenShift) {
         assertEquals(KafkaCluster.kafkaClusterName(cluster), ss.getMetadata().getName());
         // ... in the same namespace ...
         assertEquals(namespace, ss.getMetadata().getNamespace());
@@ -147,12 +146,11 @@ public class KafkaClusterTest {
         assertEquals(new Integer(healthDelay), ss.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds());
         assertEquals("foo=bar\n", AbstractModel.containerEnvVars(ss.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaCluster.ENV_VAR_KAFKA_CONFIGURATION));
 
-        if (cm.getData().get("kafka-storage") != null) {
+        if (cm.getSpec().getKafka().getStorage() != null) {
 
-            JsonObject json = new JsonObject(cm.getData().get("kafka-storage"));
-            Storage storage = Storage.fromJson(json);
+            io.strimzi.operator.cluster.crd.model.Storage storage = cm.getSpec().getKafka().getStorage();
 
-            if ((storage.type() == Storage.StorageType.PERSISTENT_CLAIM) && !isOpenShift) {
+            if (storage instanceof PersistentClaimStorage && !isOpenShift) {
 
                 PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
 
@@ -167,9 +165,9 @@ public class KafkaClusterTest {
             }
         }
 
-        if (cm.getData().get("kafka-rack") != null) {
+        if (cm.getSpec().getKafka().getRackConfig() != null) {
 
-            RackConfig rackConfig = RackConfig.fromJson(cm.getData().get("kafka-rack"));
+            RackConfig rackConfig = cm.getSpec().getKafka().getRackConfig();
 
             // check that the pod spec contains anti-affinity rules with the right topology key
             PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
@@ -205,7 +203,7 @@ public class KafkaClusterTest {
         // Don't check the metrics CM, since this isn't restored from the StatefulSet
         checkService(kc2.generateService());
         checkHeadlessService(kc2.generateHeadlessService());
-        //checkStatefulSet(kc2.generateStatefulSet(true), cm, true);
+        checkStatefulSet(kc2.generateStatefulSet(true), kafkaAssembly, true);
     }
 
     // TODO test volume claim templates

@@ -221,11 +221,11 @@ public class KafkaCluster extends AbstractModel {
         return kafka;
     }
 
-    public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly crd, List<Secret> secrets) {
-        KafkaCluster result = new KafkaCluster(crd.getMetadata().getNamespace(),
-                crd.getMetadata().getName(),
-                Labels.fromResource(crd));
-        Kafka kafka = crd.getSpec().getKafka();
+    public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
+        KafkaCluster result = new KafkaCluster(kafkaAssembly.getMetadata().getNamespace(),
+                kafkaAssembly.getMetadata().getName(),
+                Labels.fromResource(kafkaAssembly));
+        Kafka kafka = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafka.getReplicas());
         result.setImage(kafka.getImage());
         // TODO split readiness and liveness checks
@@ -239,9 +239,10 @@ public class KafkaCluster extends AbstractModel {
         result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
         result.setMetricsConfig(kafka.getMetrics().entrySet());
         result.setMetricsEnabled(kafka.getMetrics() != null);
-        result.setZookeeperConnect(crd.getMetadata().getName() + "-zookeeper:2181");
+        result.setZookeeperConnect(kafkaAssembly.getMetadata().getName() + "-zookeeper:2181");
         result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());
+        result.setResources(kafka.getResources());
 
         result.generateCertificates(certManager, secrets);
 

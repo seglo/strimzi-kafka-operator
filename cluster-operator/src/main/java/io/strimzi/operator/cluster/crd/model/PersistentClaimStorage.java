@@ -13,7 +13,11 @@ import java.util.Map;
 /**
  * Representation for persistent claim-based storage.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 public class PersistentClaimStorage extends Storage {
     private String size;
     private String storageClass;

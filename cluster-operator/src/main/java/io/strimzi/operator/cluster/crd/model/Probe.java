@@ -10,17 +10,22 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A representation of the configurable aspect of a probe (used for health checks).
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model")
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 public class Probe {
     private int initialDelaySeconds = 10;
 
     private int timeoutSeconds = 1;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The initial delay before first the health is first checked.")
     @Minimum(0)

@@ -23,7 +23,7 @@ public class Storage {
     public static final String STORAGE_CLASS_FIELD = "class";
     public static final String SELECTOR_FIELD = "selector";
     public static final String SELECTOR_MATCH_LABELS_FIELD = "match-labels";
-    public static final String DELETE_CLAIM_FIELD = "delete-claim";
+    public static final String DELETE_CLAIM_FIELD = "deleteClaim";
 
     private final StorageType type;
     private Quantity size;

@@ -17,7 +17,7 @@ import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
 import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
 import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
+import io.strimzi.operator.cluster.crd.model.Storage;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
@@ -258,11 +258,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
 
         final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = kafka != null && kafka.getStorage() instanceof PersistentClaimStorage
-            && ((PersistentClaimStorage) kafka.getStorage()).isDeleteClaim();
+        boolean deleteClaims = kafka != null && Storage.deleteClaim(kafka.getStorage());
         List<Future> result = new ArrayList<>(8 + (deleteClaims ? kafka.getReplicas() : 0));
 
-        result.add(resourceOperator.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
+        result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.headlessName(name), null));
         result.add(kafkaSetOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));
@@ -315,11 +314,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         log.debug("{}: delete zookeeper {}", reconciliation, name);
         StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
         ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = zk != null && zk.getStorage() instanceof PersistentClaimStorage
-                && ((PersistentClaimStorage) zk.getStorage()).isDeleteClaim();
+        boolean deleteClaims = zk != null && Storage.deleteClaim(zk.getStorage());
         List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
 
-        result.add(resourceOperator.reconcile(namespace, ZookeeperCluster.zookeeperMetricsName(name), null));
+        result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricsName(name), null));
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
         result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));

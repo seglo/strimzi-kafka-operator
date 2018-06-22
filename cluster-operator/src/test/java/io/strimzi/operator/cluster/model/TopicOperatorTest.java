@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -156,7 +157,7 @@ public class TopicOperatorTest {
     }
 
     @Rule
-    public ResourceTester<TopicOperator> helper = new ResourceTester<>(TopicOperator::fromConfigMap);
+    public ResourceTester<KafkaAssembly, TopicOperator> helper = new ResourceTester<>(KafkaAssembly.class, TopicOperator::fromCrd);
 
     @Test
     public void withAffinity() throws IOException {

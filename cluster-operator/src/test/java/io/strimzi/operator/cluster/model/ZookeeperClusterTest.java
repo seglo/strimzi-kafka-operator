@@ -10,6 +10,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -30,10 +31,10 @@ public class ZookeeperClusterTest {
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{}";
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson);
-    private final ZookeeperCluster zc = ZookeeperCluster.fromConfigMap(cm);
+    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson);
+    private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(cm);
     @Rule
-    public ResourceTester<ZookeeperCluster> resourceTester = new ResourceTester<>(ZookeeperCluster::fromConfigMap);
+    public ResourceTester<KafkaAssembly, ZookeeperCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, ZookeeperCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {

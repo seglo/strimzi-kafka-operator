@@ -55,7 +55,7 @@ public abstract class AbstractReadyResourceOperator<C, T extends HasMetadata, L 
      * @param timeoutMs The timeout, in milliseconds.
      * @param predicate The predicate.
      */
-    public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, long timeoutMs, BiPredicate<String, String> predicate) {
+    public Future<Void> waitFor(String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
         Future<Void> fut = Future.future();
         log.debug("Waiting for {} resource {} in namespace {} to get ready", resourceKind, name, namespace);
         long deadline = System.currentTimeMillis() + timeoutMs;

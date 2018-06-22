@@ -15,7 +15,11 @@ import java.util.Map;
 /**
  * Representation for options to be passed to a JVM.
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class JvmOptions {
 

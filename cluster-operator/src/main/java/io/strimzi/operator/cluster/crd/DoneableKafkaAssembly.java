@@ -15,4 +15,7 @@ public class DoneableKafkaAssembly extends CustomResourceDoneable<KafkaAssembly>
     public DoneableKafkaAssembly(KafkaAssembly resource, Function<KafkaAssembly, KafkaAssembly> function) {
         super(resource, function);
     }
+    public DoneableKafkaAssembly(KafkaAssembly resource) {
+        super(resource, x -> x);
+    }
 }

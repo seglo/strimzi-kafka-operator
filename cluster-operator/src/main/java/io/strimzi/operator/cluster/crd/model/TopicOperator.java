@@ -13,12 +13,17 @@ import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.OmitFromSchema;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Representation of a Strimzi-managed topic operator deployment..
  */
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TopicOperator {
     private String watchedNamespace;
@@ -28,7 +33,7 @@ public class TopicOperator {
     private int topicMetadataMaxAttempts = io.strimzi.operator.cluster.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     private Resources resources;
     private Affinity affinity;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
     public String getWatchedNamespace() {

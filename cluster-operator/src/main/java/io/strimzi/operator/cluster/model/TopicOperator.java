@@ -92,10 +92,6 @@ public class TopicOperator extends AbstractModel {
         this.topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
 
-    public static TopicOperator fromCrd(KafkaAssembly assemblyCm) {
-        // TODO
-        return null;
-    }
 
     public void setWatchedNamespace(String watchedNamespace) {
         this.watchedNamespace = watchedNamespace;
@@ -199,6 +195,29 @@ public class TopicOperator extends AbstractModel {
         }
 
         return topicOperator;
+    }
+
+
+    public static TopicOperator fromCrd(KafkaAssembly kafkaAssembly) {
+        TopicOperator result;
+        if (kafkaAssembly.getSpec().getTopicOperator() != null) {
+            String namespace = kafkaAssembly.getMetadata().getNamespace();
+            result = new TopicOperator(
+                    namespace,
+                    kafkaAssembly.getMetadata().getName(),
+                    Labels.fromResource(kafkaAssembly));
+            io.strimzi.operator.cluster.crd.model.TopicOperator tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+            result.setImage(tcConfig.getImage());
+            result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
+            result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
+            result.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds());
+            result.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
+            result.setResources(tcConfig.getResources());
+            result.setUserAffinity(tcConfig.getAffinity());
+        } else {
+            result = null;
+        }
+        return result;
     }
 
     /**

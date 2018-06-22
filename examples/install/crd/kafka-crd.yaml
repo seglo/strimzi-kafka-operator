@@ -2,9 +2,9 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: kafkas.cluster-operator.strimzi.io
+  name: kafkas.kafka.strimzi.io
 spec:
-  group: cluster-operator.strimzi.io
+  group: kafka.strimzi.io
   version: v1alpha1
   scope: Namespaced
   names:
@@ -34,6 +34,8 @@ spec:
                   description: Storage configuration (disk). Cannot be updated.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     class:
                       type: string
                       description: The storage class to use for dynamic volume allocation.
@@ -54,18 +56,6 @@ spec:
                     type:
                       type: string
                       description: Must be `persistent-claim`
-                rackConfig:
-                  description: Configuration of the `broker.rack` broker config.
-                  type: object
-                  properties:
-                    topologyKey:
-                      type: string
-                      description: A key that matches labels assigned to the OpenShift
-                        or Kubernetes cluster nodes. The value of the label is used
-                        to set the broker's `broker.rack` config.
-                      example: failure-domain.beta.kubernetes.io/zone
-                  required:
-                  - topologyKey
                 brokerRackInitImage:
                   type: string
                   description: The image of the init container used for initializing
@@ -74,6 +64,8 @@ spec:
                   description: Pod liveness checking.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     initialDelaySeconds:
                       type: integer
                       description: The initial delay before first the health is first
@@ -87,6 +79,8 @@ spec:
                   description: Pod readiness checking.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     initialDelaySeconds:
                       type: integer
                       description: The initial delay before first the health is first
@@ -349,6 +343,8 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                additionalProperties:
+                  type: object
                 config:
                   type: object
                   description: 'The kafka broker config. Properties with the following
@@ -356,14 +352,32 @@ spec:
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
                     zookeeper.set.acl, authorizer., super.user'
+                rack:
+                  description: Configuration of the `broker.rack` broker config.
+                  type: object
+                  properties:
+                    additionalProperties:
+                      type: object
+                    topologyKey:
+                      type: string
+                      description: A key that matches labels assigned to the OpenShift
+                        or Kubernetes cluster nodes. The value of the label is used
+                        to set the broker's `broker.rack` config.
+                      example: failure-domain.beta.kubernetes.io/zone
+                  required:
+                  - topologyKey
                 resources:
                   description: Resource constraints (limits and requests).
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     limits:
                       description: Resource limits applied at runtime.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -376,6 +390,8 @@ spec:
                       description: Resource requests applied during pod scheduling.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -402,6 +418,8 @@ spec:
                   description: Storage configuration (disk). Cannot be updated.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     class:
                       type: string
                       description: The storage class to use for dynamic volume allocation.
@@ -426,6 +444,8 @@ spec:
                   description: Pod liveness checking.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     initialDelaySeconds:
                       type: integer
                       description: The initial delay before first the health is first
@@ -439,6 +459,8 @@ spec:
                   description: Pod readiness checking.
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     initialDelaySeconds:
                       type: integer
                       description: The initial delay before first the health is first
@@ -701,6 +723,8 @@ spec:
                   type: object
                   description: The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter
                     for details of the structure of this configuration.
+                additionalProperties:
+                  type: object
                 config:
                   type: object
                   description: 'The zookeeper broker config. Properties with the following
@@ -710,10 +734,14 @@ spec:
                   description: Resource constraints (limits and requests).
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     limits:
                       description: Resource limits applied at runtime.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -726,6 +754,8 @@ spec:
                       description: Resource requests applied during pod scheduling.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -741,6 +771,8 @@ spec:
               description: Configuration of the Topic Operator
               type: object
               properties:
+                additionalProperties:
+                  type: object
                 affinity:
                   description: Pod affinity rules.
                   type: object
@@ -984,10 +1016,14 @@ spec:
                 resources:
                   type: object
                   properties:
+                    additionalProperties:
+                      type: object
                     limits:
                       description: Resource limits applied at runtime.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -1000,6 +1036,8 @@ spec:
                       description: Resource requests applied during pod scheduling.
                       type: object
                       properties:
+                        additionalProperties:
+                          type: object
                         cpu:
                           type: string
                           description: CPU
@@ -1017,6 +1055,10 @@ spec:
                 zookeeperSessionTimeoutSeconds:
                   type: string
                   description: Timeout for the Zookeeper session
+            additionalProperties:
+              type: object
           required:
           - kafka
           - zookeeper
+        additionalProperties:
+          type: object

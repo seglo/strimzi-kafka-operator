@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -126,6 +127,22 @@ public final class TestUtils {
                 }
             } else {
                 return null;
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String readFile(String fileName) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8))) {
+                String line = reader.readLine();
+                while (line != null) {
+                    sb.append(line).append("\n");
+                    line = reader.readLine();
+                }
+                return sb.toString();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

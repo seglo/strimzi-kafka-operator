@@ -250,7 +250,11 @@ public class ZookeeperCluster extends AbstractModel {
     public ConfigMap generateMetricsConfigMap() {
         if (isMetricsEnabled()) {
             Map<String, String> data = new HashMap<>();
-            data.put(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            JsonObject ffs = new JsonObject();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                ffs.put(entry.getKey(), entry.getValue());
+            }
+            data.put(METRICS_CONFIG_FILE, ffs.toString());
             return createConfigMap(getMetricsConfigName(), data);
         } else {
             return null;

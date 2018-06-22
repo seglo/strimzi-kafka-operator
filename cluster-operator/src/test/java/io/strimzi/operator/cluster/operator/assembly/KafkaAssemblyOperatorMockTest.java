@@ -4,59 +4,70 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.Reconciliation;
+import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
+import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
+import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
+import io.strimzi.operator.cluster.crd.model.JsonUtils;
+import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.operator.cluster.crd.model.KafkaAssemblyBuilder;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
+import io.strimzi.operator.cluster.crd.model.PersistentClaimStorageBuilder;
+import io.strimzi.operator.cluster.crd.model.Resources;
+import io.strimzi.operator.cluster.crd.model.ResourcesBuilder;
+import io.strimzi.operator.cluster.crd.model.Storage;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.crd.model.Resources;
-import io.strimzi.operator.cluster.model.Storage;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-
-
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.ResourceUtils.map;
+import static io.strimzi.operator.cluster.crd.model.Storage.deleteClaim;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(VertxUnitRunnerWithParametersFactory.class)
@@ -68,24 +79,25 @@ public class KafkaAssemblyOperatorMockTest {
     private static final String CLUSTER_NAME = "my-cluster";
 
     private final int zkReplicas;
-    private final JsonObject zkStorage;
+    private final Storage zkStorage;
 
     private final int kafkaReplicas;
-    private final JsonObject kafkaStorage;
-    private final String resources;
+    private final Storage kafkaStorage;
+    private final Resources resources;
     private KubernetesClient mockClient;
 
     public static class Params {
         private final int zkReplicas;
-        private final JsonObject zkStorage;
+        private final Storage zkStorage;
 
         private final int kafkaReplicas;
-        private final JsonObject kafkaStorage;
+        private final Storage kafkaStorage;
+        private Resources resources;
 
-        private String resources;
-
-        public Params(int zkReplicas, JsonObject zkStorage, int kafkaReplicas, JsonObject kafkaStorage,
-                      String resources) {
+        public Params(int zkReplicas,
+                      Storage zkStorage, int kafkaReplicas,
+                      Storage kafkaStorage,
+                      Resources resources) {
             this.kafkaReplicas = kafkaReplicas;
             this.kafkaStorage = kafkaStorage;
             this.zkReplicas = zkReplicas;
@@ -105,29 +117,38 @@ public class KafkaAssemblyOperatorMockTest {
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
-        JsonObject[] storageConfigs = {
-            new JsonObject("{\"type\": \"ephemeral\"}"),
-
-            new JsonObject("{\"type\": \"persistent-claim\", " +
-                    "\"size\": \"123\", " +
-                    "\"class\": \"foo\"," +
-                    "\"delete-claim\": true}"),
-
-            new JsonObject("{\"type\": \"persistent-claim\", " +
-                    "\"size\": \"123\", " +
-                    "\"class\": \"foo\"," +
-                    "\"delete-claim\": false}")
+        io.strimzi.operator.cluster.crd.model.Storage[] storageConfigs = {
+            new EphemeralStorage(),
+            new PersistentClaimStorageBuilder()
+                .withSize("123")
+                .withStorageClass("foo")
+                .withDeleteClaim(true)
+                .build(),
+            new PersistentClaimStorageBuilder()
+                .withSize("123")
+                .withStorageClass("foo")
+                .withDeleteClaim(false)
+                .build()
         };
-        String[] resources = {
-            "{ \"limits\" : { \"cpu\": 5, \"memory\": 5000 }, \"requests\": { \"cpu\": 5, \"memory\": 5000 } }"
+        Resources[] resources = {
+            new ResourcesBuilder()
+            .withNewLimits()
+                .withMilliCpu("5000")
+                .withMemory("5000")
+            .endLimits()
+            .withNewRequests()
+                .withMilliCpu("5000")
+                .withMemory("5000")
+            .endRequests()
+            .build()
         };
         List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
 
         for (int zkReplica : replicas) {
-            for (JsonObject zkStorage : storageConfigs) {
+            for (Storage zkStorage : storageConfigs) {
                 for (int kafkaReplica : replicas) {
-                    for (JsonObject kafkaStorage : storageConfigs) {
-                        for (String resource : resources) {
+                    for (Storage kafkaStorage : storageConfigs) {
+                        for (Resources resource : resources) {
                             result.add(new KafkaAssemblyOperatorMockTest.Params(
                                     zkReplica, zkStorage,
                                     kafkaReplica, kafkaStorage, resource));
@@ -150,45 +171,40 @@ public class KafkaAssemblyOperatorMockTest {
         this.resources = params.resources;
     }
 
-    /** Return the storage type the test cluster initially uses */
-    public Storage.StorageType storageType(JsonObject json) {
-        return Storage.fromJson(json).type();
-    }
-
-    /** Return the storage class the test cluster initially uses */
-    public String storageClass(JsonObject json) {
-        return json.getString(Storage.STORAGE_CLASS_FIELD);
-    }
-
-    /** Return the storage delete-claim the test cluster initially uses */
-    public boolean deleteClaim(JsonObject json) {
-        return json.getBoolean(Storage.DELETE_CLAIM_FIELD, false);
-    }
-
-
     private Vertx vertx;
-    private ConfigMap cluster;
+    private KafkaAssembly cluster;
 
     @Before
     public void before() {
         this.vertx = Vertx.vertx();
-
-        this.cluster = new ConfigMapBuilder()
-                .withNewMetadata()
-                .withName(CLUSTER_NAME)
-                .withNamespace(NAMESPACE)
-                .withLabels(Labels.forKind("cluster").withType(AssemblyType.KAFKA).toMap())
-                .endMetadata()
-                .withData(map(KafkaCluster.KEY_REPLICAS, String.valueOf(kafkaReplicas),
-                        KafkaCluster.KEY_STORAGE, kafkaStorage.toString(),
-                        KafkaCluster.KEY_METRICS_CONFIG, "{}",
-                        KafkaCluster.KEY_RESOURCES, resources != null ? resources : null,
-                        ZookeeperCluster.KEY_REPLICAS, String.valueOf(zkReplicas),
-                        ZookeeperCluster.KEY_STORAGE, zkStorage.toString(),
-                        ZookeeperCluster.KEY_METRICS_CONFIG, "{}",
-                        TopicOperator.KEY_CONFIG, "{}"))
+        this.cluster = new KafkaAssemblyBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(CLUSTER_NAME)
+                        .withNamespace(NAMESPACE)
+                        .withLabels(Labels.forKind("cluster").withType(AssemblyType.KAFKA).toMap())
+                        .build())
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(kafkaReplicas)
+                        .withStorage(kafkaStorage)
+                        .withMetrics(emptyMap())
+                        .withResources(resources)
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withReplicas(zkReplicas)
+                        .withStorage(zkStorage)
+                        .withMetrics(emptyMap())
+                    .endZookeeper()
+                    .withNewTopicOperator()
+                        .withImage("")
+                    .endTopicOperator()
+                .endSpec()
                 .build();
-        mockClient = new MockKube().withInitialCms(Collections.singleton(cluster)).build();
+
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+
+        mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .withInitialInstances(Collections.singleton(cluster)).end().build();
     }
 
     @After
@@ -198,6 +214,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
+        KafkaAssemblyCrdOperator kafkaops = new KafkaAssemblyCrdOperator(vertx, mockClient);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
         KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
         ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);
@@ -206,7 +223,7 @@ public class KafkaAssemblyOperatorMockTest {
         SecretOperator secretops = new SecretOperator(vertx, mockClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, true, 2_000,
                 new MockCertManager(),
-                cmops, svcops, zksops, ksops, pvcops, depops, secretops);
+                kafkaops, cmops, svcops, zksops, ksops, pvcops, depops, secretops);
 
         LOGGER.info("Reconciling initially -> create");
         Async createAsync = context.async();
@@ -249,7 +266,7 @@ public class KafkaAssemblyOperatorMockTest {
         });
         updateAsync.await();
         LOGGER.info("Reconciling again -> delete");
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
@@ -295,9 +312,9 @@ public class KafkaAssemblyOperatorMockTest {
      * according to the given storage, number of replicas and naming scheme,
      * return the names of the PVCs created
      */
-    private Set<String> createPvcs(JsonObject storage, int replicas, Function<Integer, String> pvcNameFn) {
+    private Set<String> createPvcs(Storage storage, int replicas, Function<Integer, String> pvcNameFn) {
         Set<String> expectedClaims = new HashSet<>();
-        if (storageType(storage).equals(Storage.StorageType.PERSISTENT_CLAIM)) {
+        if (storage instanceof PersistentClaimStorage) {
             for (int i = 0; i < replicas; i++) {
                 String pvcName = pvcNameFn.apply(i);
                 mockClient.persistentVolumeClaims().inNamespace(NAMESPACE).withName(pvcName).create(
@@ -307,7 +324,6 @@ public class KafkaAssemblyOperatorMockTest {
                                 .endMetadata()
                                 .build());
                 expectedClaims.add(pvcName);
-
             }
         }
         return expectedClaims;
@@ -430,7 +446,7 @@ public class KafkaAssemblyOperatorMockTest {
                     mockClient.services().inNamespace(NAMESPACE).withName(service).get());
         }
         LOGGER.info("Deleting");
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
         Async updateAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
@@ -500,7 +516,7 @@ public class KafkaAssemblyOperatorMockTest {
                     mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ss).get());
         }
         LOGGER.info("Deleting");
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
         Async updateAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
@@ -554,13 +570,10 @@ public class KafkaAssemblyOperatorMockTest {
 
     @Test
     public void testUpdateKafkaWithChangedPersistentVolume(TestContext context) {
-        if (!Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
-            LOGGER.info("Skipping claim-based test because using storage type {}", kafkaStorage);
-            return;
-        }
+        Assume.assumeTrue(kafkaStorage instanceof PersistentClaimStorage);
 
         KafkaAssemblyOperator kco = createCluster(context);
-        String originalStorageClass = storageClass(kafkaStorage);
+        String originalStorageClass = Storage.storageClass(kafkaStorage);
         assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
 
         Async updateAsync = context.async();
@@ -568,11 +581,11 @@ public class KafkaAssemblyOperatorMockTest {
         // Try to update the storage class
         String changedClass = originalStorageClass + "2";
 
-        HashMap<String, String> data = new HashMap<>(cluster.getData());
-        data.put(KafkaCluster.KEY_STORAGE,
-                new JsonObject(kafkaStorage.toString()).put(Storage.STORAGE_CLASS_FIELD, changedClass).toString());
-        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                .withNewPersistentClaimStorageStorage()
+                    .withStorageClass(changedClass)
+                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage class");
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
@@ -582,6 +595,12 @@ public class KafkaAssemblyOperatorMockTest {
             assertStorageClass(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalStorageClass);
             updateAsync.complete();
         });
+    }
+
+    private Resource<KafkaAssembly, DoneableKafkaAssembly> kafkaAssembly(String namespace, String name) {
+        CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(KafkaAssembly.RESOURCE_NAME).get();
+        return mockClient.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
+                .inNamespace(namespace).withName(name);
     }
 
     private void assertStorageClass(TestContext context, String statefulSetName, String expectedClass) {
@@ -603,20 +622,20 @@ public class KafkaAssemblyOperatorMockTest {
         Async updateAsync = context.async();
 
         // Try to update the storage type
-        HashMap<String, String> data = new HashMap<>(cluster.getData());
-
-        if ("ephemeral".equals(kafkaStorage.getString("type"))) {
-            data.put(KafkaCluster.KEY_STORAGE,
-                    new JsonObject("{\"type\": \"persistent-claim\", " +
-                            "\"size\": \"123\"}").toString());
-        } else if ("persistent-claim".equals(kafkaStorage.getString("type"))) {
-            data.put(KafkaCluster.KEY_STORAGE,
-                    new JsonObject("{\"type\": \"ephemeral\"}").toString());
+        KafkaAssembly changedClusterCm = null;
+        if (kafkaStorage instanceof EphemeralStorage) {
+            changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                    .withNewPersistentClaimStorageStorage()
+                        .withSize("123")
+                    .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+        } else if (kafkaStorage instanceof PersistentClaimStorage) {
+            changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                    .withNewEphemeralStorageStorage()
+                    .endEphemeralStorageStorage().endKafka().endSpec().build();
+        } else {
+            fail();
         }
-        data.put(KafkaCluster.KEY_RESOURCES, resources != null ? resources.toString() : null);
-
-        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed storage type");
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
@@ -658,28 +677,24 @@ public class KafkaAssemblyOperatorMockTest {
         StatefulSet statefulSet = mockClient.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get();
         context.assertNotNull(statefulSet);
         ResourceRequirements requirements = statefulSet.getSpec().getTemplate().getSpec().getContainers().get(0).getResources();
-        Resources resources = Resources.fromJson(this.resources);
         if (resources != null && resources.getRequests() != null) {
             context.assertEquals(resources.getRequests().getMilliCpu(), requirements.getRequests().get("cpu").getAmount());
         }
         if (resources != null && resources.getRequests() != null) {
-            context.assertEquals(resources.getRequests().getMemoryString(), requirements.getRequests().get("memory").getAmount());
+            context.assertEquals(resources.getRequests().getMemory(), requirements.getRequests().get("memory").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
             context.assertEquals(resources.getLimits().getMilliCpu(), requirements.getLimits().get("cpu").getAmount());
         }
         if (resources != null && resources.getLimits() != null) {
-            context.assertEquals(resources.getLimits().getMemoryString(), requirements.getLimits().get("memory").getAmount());
+            context.assertEquals(resources.getLimits().getMemory(), requirements.getLimits().get("memory").getAmount());
         }
     }
 
     /** Test that we can change the deleteClaim flag, and that it's honoured */
     @Test
     public void testUpdateKafkaWithChangedDeleteClaim(TestContext context) {
-        if (!Storage.StorageType.PERSISTENT_CLAIM.equals(storageType(kafkaStorage))) {
-            LOGGER.info("Skipping claim-based test because using storage type {}", kafkaStorage);
-            return;
-        }
+        Assume.assumeTrue(kafkaStorage instanceof PersistentClaimStorage);
 
         Set<String> allPvcs = new HashSet<>();
         Set<String> kafkaPvcs = createPvcs(kafkaStorage,
@@ -694,15 +709,13 @@ public class KafkaAssemblyOperatorMockTest {
         KafkaAssemblyOperator kco = createCluster(context);
 
         boolean originalKafkaDeleteClaim = deleteClaim(kafkaStorage);
-        //assertDeleteClaim(context, KafkaCluster.kafkaClusterName(CLUSTER_NAME), originalKafkaDeleteClaim);
 
         // Try to update the storage class
-        boolean changedKafkaDeleteClaim = !originalKafkaDeleteClaim;
-        HashMap<String, String> data = new HashMap<>(cluster.getData());
-        data.put(KafkaCluster.KEY_STORAGE,
-                new JsonObject(kafkaStorage.toString()).put(Storage.DELETE_CLAIM_FIELD, changedKafkaDeleteClaim).toString());
-        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                .withNewPersistentClaimStorageStorage()
+                .withDeleteClaim(!originalKafkaDeleteClaim)
+                .endPersistentClaimStorageStorage().endKafka().endSpec().build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Updating with changed delete claim");
         Async updateAsync = context.async();
@@ -714,12 +727,12 @@ public class KafkaAssemblyOperatorMockTest {
         updateAsync.await();
 
         LOGGER.info("Reconciling again -> delete");
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
         Async deleteAsync = context.async();
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
             if (ar.failed()) ar.cause().printStackTrace();
             context.assertTrue(ar.succeeded());
-            assertPvcs(context, changedKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
+            assertPvcs(context, !originalKafkaDeleteClaim ? deleteClaim(zkStorage) ? emptySet() : zkPvcs :
                     deleteClaim(zkStorage) ? kafkaPvcs : allPvcs);
             deleteAsync.complete();
         });
@@ -742,11 +755,9 @@ public class KafkaAssemblyOperatorMockTest {
         String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, newScale);
         context.assertNotNull(mockClient.pods().inNamespace(NAMESPACE).withName(deletedPod).get());
 
-        HashMap<String, String> data = new HashMap<>(cluster.getData());
-        data.put(KafkaCluster.KEY_REPLICAS,
-                String.valueOf(newScale));
-        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                .withReplicas(newScale).endKafka().endSpec().build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling down to {} Kafka pods", newScale);
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
@@ -783,11 +794,9 @@ public class KafkaAssemblyOperatorMockTest {
         String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
         context.assertNull(mockClient.pods().inNamespace(NAMESPACE).withName(newPod).get());
 
-        HashMap<String, String> data = new HashMap<>(cluster.getData());
-        data.put(KafkaCluster.KEY_REPLICAS,
-                String.valueOf(newScale));
-        ConfigMap changedClusterCm = new ConfigMapBuilder(cluster).withData(data).build();
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).patch(changedClusterCm);
+        KafkaAssembly changedClusterCm = new KafkaAssemblyBuilder(cluster).editSpec().editKafka()
+                .withReplicas(newScale).endKafka().endSpec().build();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).patch(changedClusterCm);
 
         LOGGER.info("Scaling up to {} Kafka pods", newScale);
         kco.reconcileAssembly(new Reconciliation("test-trigger", AssemblyType.KAFKA, NAMESPACE, CLUSTER_NAME), ar -> {
@@ -813,9 +822,9 @@ public class KafkaAssemblyOperatorMockTest {
     @Test
     public void testReconcileAllDeleteCase(TestContext context) throws InterruptedException {
         KafkaAssemblyOperator kco = createCluster(context);
-        mockClient.configMaps().inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
+        kafkaAssembly(NAMESPACE, CLUSTER_NAME).delete();
 
-        LOGGER.info("reconcileAll after CM deletion -> All resources should be deleted");
+        LOGGER.info("reconcileAll after KafkaAssembly deletion -> All resources should be deleted");
         kco.reconcileAll("test-trigger", NAMESPACE, Labels.forKind("cluster")).await();
 
         // Assert no CMs, Services, StatefulSets, Deployments, Secrets are left

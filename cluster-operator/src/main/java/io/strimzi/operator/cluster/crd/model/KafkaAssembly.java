@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.sundr.builder.annotations.Buildable;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,22 +36,33 @@ import java.util.Map;
                 ),
                 group = KafkaAssembly.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = "v1alpha1"
+                version = KafkaAssembly.VERSION
         )
 )
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
-@Buildable(editableEnabled = false, validationEnabled = true, generateBuilderPackage = true, builderPackage = "io.strimzi.operator.cluster.crd.model"/*, inline = @Inline(type = Doneable.class, prefix = "Doneable", value = "done")*/)
+@Buildable(
+        editableEnabled = false,
+        generateBuilderPackage = true,
+        builderPackage = "io.strimzi.operator.cluster.crd.model"
+)
+//@ExternalBuildables(
+//        editableEnabled = false,
+//        generateBuilderPackage = true,
+//        refs = @BuildableReference(ObjectMeta.class),
+//        builderPackage = "io.strimzi.operator.cluster.crd.model"
+//)
 public class KafkaAssembly extends CustomResource {
 
     private static final long serialVersionUID = 1L;
+    public static final String VERSION = "v1alpha1";
     public static final String RESOURCE_KIND = "Kafka";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_NAME = RESOURCE_KIND + "." + RESOURCE_GROUP;
+    public static final String RESOURCE_NAME = "kafkas." + RESOURCE_GROUP;
 
     private String apiVersion;
     private ObjectMeta metadata;
     private transient KafkaAssemblySpec spec;
-    private Map<String, Object> additionalProperties;
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
     public String getApiVersion() {
@@ -70,12 +82,12 @@ public class KafkaAssembly extends CustomResource {
 
     @Override
     public ObjectMeta getMetadata() {
-        return metadata;
+        return super.getMetadata();
     }
 
     @Override
     public void setMetadata(ObjectMeta metadata) {
-        this.metadata = metadata;
+        super.setMetadata(metadata);
     }
 
     public KafkaAssemblySpec getSpec() {

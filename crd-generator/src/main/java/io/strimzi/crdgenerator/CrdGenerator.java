@@ -131,6 +131,10 @@ import static java.util.Arrays.asList;
  */
 public class CrdGenerator {
 
+    // TODO CrdValidator
+    // extraProperties
+    // @Buildable
+
     private static void warn(String s) {
         System.err.println("CrdGenerator: warn: " + s);
     }
