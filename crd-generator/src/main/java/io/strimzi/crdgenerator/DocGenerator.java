@@ -347,7 +347,7 @@ public class DocGenerator {
 
         for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
             try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(new File(entry.getKey())), StandardCharsets.UTF_8)) {
-                new DocGenerator(2, entry.getValue(), writer, linker).generate();
+                new DocGenerator(3, entry.getValue(), writer, linker).generate();
             }
         }
     }

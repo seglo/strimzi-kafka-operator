@@ -1,6 +1,6 @@
 [[kafka.strimzi.io-v1alpha1-kind-Kafka]]
 [[kafka.strimzi.io-v1alpha1-type-KafkaAssembly]]
-## `Kafka` v1alpha1 kafka.strimzi.io
+### `Kafka` v1alpha1 kafka.strimzi.io
 
 
 [options="header"]
@@ -13,7 +13,7 @@
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec]]
-## `KafkaAssemblySpec` v1alpha1 kafka.strimzi.io
+### `KafkaAssemblySpec` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssembly,`KafkaAssembly`>>
 
@@ -32,7 +32,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssembly,`KafkaAssembly`>>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-Kafka]]
-## `Kafka` v1alpha1 kafka.strimzi.io
+### `Kafka` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
@@ -71,7 +71,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-EphemeralStorage]]
-## `EphemeralStorage` v1alpha1 kafka.strimzi.io
+### `EphemeralStorage` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
 
@@ -88,7 +88,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage]]
-## `PersistentClaimStorage` v1alpha1 kafka.strimzi.io
+### `PersistentClaimStorage` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
 
@@ -113,7 +113,7 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-Probe]]
-## `Probe` v1alpha1 kafka.strimzi.io
+### `Probe` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
 
@@ -130,7 +130,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-JvmOptions]]
-## `JvmOptions` v1alpha1 kafka.strimzi.io
+### `JvmOptions` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
 
@@ -149,7 +149,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-RackConfig]]
-## `RackConfig` v1alpha1 kafka.strimzi.io
+### `RackConfig` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
 
@@ -164,7 +164,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-Resources]]
-## `Resources` v1alpha1 kafka.strimzi.io
+### `Resources` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-TopicOperator,`TopicOperator`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
 
@@ -181,7 +181,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-CpuMemory]]
-## `CpuMemory` v1alpha1 kafka.strimzi.io
+### `CpuMemory` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
 
@@ -198,7 +198,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-Zookeeper]]
-## `Zookeeper` v1alpha1 kafka.strimzi.io
+### `Zookeeper` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
@@ -233,7 +233,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-TopicOperator]]
-## `TopicOperator` v1alpha1 kafka.strimzi.io
+### `TopicOperator` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 

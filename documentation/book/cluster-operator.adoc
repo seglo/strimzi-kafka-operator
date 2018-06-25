@@ -7,48 +7,51 @@ On {OpenShiftName} such a cluster can be deployed using the Source2Image feature
 
 image::cluster_operator.png[Cluster Operator]
 
-When the Cluster Operator is up, it starts to "watch" for ConfigMaps containing the Kafka or Kafka Connect
-cluster configuration. Such ConfigMaps need to have a specific label which is, by default, `strimzi.io/kind=cluster`
-(as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
+When the Cluster Operator is up, it starts to "watch" for certain {ProductPlatformName} resources containing the  desired Kafka or Kafka Connect cluster configuration.
+A `Kafka` resource is used for Kafka cluster configuration, and a `ConfigMap` is used for Kafka Connect cluster configuration.
+The ConfigMaps for Kafka Connect clusters need to have a specific label which is, by default, `strimzi.io/kind=cluster` (as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
-When a new ConfigMap is created in {ProductPlatformName} cluster, the operator gets the cluster configuration from
-its `data` section and starts creating a new Kafka or Kafka Connect cluster by creating the necessary {ProductPlatformName}
+When a new desired resource (that is, a Kafka resource or a Kafka Connect ConfigMap) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName}
 resources, such as StatefulSets, ConfigMaps, Services etc.
 
-Every time the ConfigMap is updated by the user with some changes in the `data` section, the operator performs corresponding
-updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster. Resources are either patched
-or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the cluster ConfigMap.
+Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster.
+Resources are either patched or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the desired cluster resource.
 This might cause a rolling update which might lead to service disruption.
 
-Finally, when the ConfigMap is deleted, the operator starts to un-deploy the cluster deleting all the related {ProductPlatformName}
+Finally, when the desired resource is deleted, the operator starts to un-deploy the cluster deleting all the related {ProductPlatformName}
 resources.
 
 === Reconciliation
 
-Although the operator reacts to all notifications about the cluster ConfigMaps received from the {ProductPlatformName} cluster,
-if the operator is not running, or if a notification is not received for any reason, the ConfigMaps will get out of sync
+Although the operator reacts to all notifications about the desired cluster resources received from the {ProductPlatformName} cluster,
+if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync
 with the state of the running {ProductPlatformName} cluster.
 
 In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so
-that it can compare the state of the ConfigMaps with the current cluster deployment in order to have
+that it can compare the state of the desired resources with the current cluster deployments in order to have
 a consistent state across all of them.
 
+[[kafka_assembly_details]]
+=== Format of the `Kafka` resource
+
+The full API is described in <<kafka_resource_reference>>
+
+Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
+This provides a convenient mechanism for those resource to be labelled
+in whatever way the user requires.
+
 [[config_map_details]]
-=== Format of the cluster ConfigMap
+=== Format of the Kafka Connect cluster ConfigMap
 
-The operator watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get
-configuration for a Kafka or Kafka Connect cluster to deploy.
+The operator watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get configuration for a Kafka Connect cluster to deploy.
 
-In order to distinguish which "type" of cluster to deploy, Kafka or Kafka Connect, the operator checks the
-`strimzi.io/type` label which can have one of the the following values :
+In order to distinguish which "type" of cluster to deploy, the operator checks the `strimzi.io/type` label which can have one of the the following values :
 
-* `kafka`: the ConfigMap provides configuration for a Kafka cluster (with Zookeeper ensemble) deployment
 * `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
-* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image
-features (works only with {OpenShiftName})
+* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features (works only with {OpenShiftName})
 
-Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making
-up the Kafka or Kafka Connect cluster. This provides a convenient mechanism for those resource to be labelled
+Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
+This provides a convenient mechanism for those resource to be labelled
 in whatever way the user requires.
 
 The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
