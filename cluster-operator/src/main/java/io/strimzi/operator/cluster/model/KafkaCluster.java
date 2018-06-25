@@ -21,17 +21,17 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.RackConfig;
+import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
-import io.strimzi.operator.cluster.crd.model.JvmOptions;
-import io.strimzi.operator.cluster.crd.model.Kafka;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
-import io.strimzi.operator.cluster.crd.model.RackConfig;
-import io.strimzi.operator.cluster.crd.model.Resources;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
@@ -80,12 +80,6 @@ public class KafkaCluster extends AbstractModel {
     private String initImage;
 
     // Configuration defaults
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
-    public static final String DEFAULT_INIT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_INIT_KAFKA_IMAGE", "strimzi/init-kafka:latest");
-
-
     private static final int DEFAULT_REPLICAS = 3;
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
@@ -130,7 +124,7 @@ public class KafkaCluster extends AbstractModel {
         this.name = kafkaClusterName(cluster);
         this.headlessName = headlessName(cluster);
         this.metricsConfigName = metricConfigsName(cluster);
-        this.image = DEFAULT_IMAGE;
+        this.image = Kafka.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
         this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
@@ -141,7 +135,7 @@ public class KafkaCluster extends AbstractModel {
         this.metricsConfigVolumeName = "kafka-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
 
-        this.initImage = DEFAULT_INIT_IMAGE;
+        this.initImage = Kafka.DEFAULT_INIT_IMAGE;
     }
 
     public static String kafkaClusterName(String cluster) {
@@ -182,7 +176,10 @@ public class KafkaCluster extends AbstractModel {
      * @param kafkaClusterCm ConfigMap with cluster configuration
      * @param secrets Secrets related to the cluster
      * @return Kafka cluster instance
+     *
+     * @deprecated Use fromCrd
      */
+    @Deprecated
     public static KafkaCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
         KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
                 kafkaClusterCm.getMetadata().getName(),
@@ -190,7 +187,7 @@ public class KafkaCluster extends AbstractModel {
 
         Map<String, String> data = kafkaClusterCm.getData();
         kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, Kafka.DEFAULT_IMAGE));
         kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
@@ -213,7 +210,7 @@ public class KafkaCluster extends AbstractModel {
         if (rackConfig != null) {
             kafka.setRackConfig(rackConfig);
         }
-        kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, DEFAULT_INIT_IMAGE));
+        kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, Kafka.DEFAULT_INIT_IMAGE));
         kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
         kafka.generateCertificates(certManager, secrets);

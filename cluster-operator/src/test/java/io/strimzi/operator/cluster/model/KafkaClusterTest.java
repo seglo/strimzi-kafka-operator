@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.RackConfig;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
-import io.strimzi.operator.cluster.crd.model.RackConfig;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Rule;
 import org.junit.Test;
@@ -148,7 +148,7 @@ public class KafkaClusterTest {
 
         if (cm.getSpec().getKafka().getStorage() != null) {
 
-            io.strimzi.operator.cluster.crd.model.Storage storage = cm.getSpec().getKafka().getStorage();
+            io.strimzi.api.kafka.model.Storage storage = cm.getSpec().getKafka().getStorage();
 
             if (storage instanceof PersistentClaimStorage && !isOpenShift) {
 

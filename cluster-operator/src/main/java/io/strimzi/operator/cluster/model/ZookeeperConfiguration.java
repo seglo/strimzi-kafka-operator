@@ -5,6 +5,8 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.Zookeeper;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -15,13 +17,13 @@ import static java.util.Arrays.asList;
  * Class for handling Zookeeper configuration passed by the user
  */
 public class ZookeeperConfiguration extends AbstractConfiguration {
-    public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
+
     private static final List<String> FORBIDDEN_OPTIONS;
     private static final Properties DEFAULTS;
 
     static {
         FORBIDDEN_OPTIONS = asList(
-                FORBIDDEN_PREFIXES.split(" *, *"));
+                Zookeeper.FORBIDDEN_PREFIXES.split(" *, *"));
 
         DEFAULTS = new Properties();
         DEFAULTS.setProperty("timeTick", "2000");

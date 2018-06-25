@@ -12,6 +12,10 @@
     <artifactId>systemtest</artifactId>
     <dependencies>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-core</artifactId>
         </dependency>

@@ -45,13 +45,13 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
+import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.MemoryDeserializer;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.CpuMemory;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.crd.model.CpuMemory;
-import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
-import io.strimzi.operator.cluster.crd.model.JvmOptions;
-import io.strimzi.operator.cluster.crd.model.MemoryDeserializer;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
-import io.strimzi.operator.cluster.crd.model.Resources;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -101,7 +101,7 @@ public abstract class AbstractModel {
     protected Iterable<Map.Entry<String, Object>> metricsConfig;
     protected String metricsConfigName;
 
-    protected io.strimzi.operator.cluster.crd.model.Storage storage;
+    protected io.strimzi.api.kafka.model.Storage storage;
 
     protected AbstractConfiguration configuration;
 
@@ -199,12 +199,12 @@ public abstract class AbstractModel {
         return null;
     }
 
-    public io.strimzi.operator.cluster.crd.model.Storage getStorage() {
+    public io.strimzi.api.kafka.model.Storage getStorage() {
         return storage;
     }
 
     /**
-     * @deprecated Use {@link #setStorage(io.strimzi.operator.cluster.crd.model.Storage)}
+     * @deprecated Use {@link #setStorage(io.strimzi.api.kafka.model.Storage)}
      */
     @Deprecated
     protected void setStorage(Storage storage) {
@@ -226,8 +226,7 @@ public abstract class AbstractModel {
         }
     }
 
-    protected void setStorage(io.strimzi.operator.cluster.crd.model.Storage storage) {
-
+    protected void setStorage(io.strimzi.api.kafka.model.Storage storage) {
         this.storage = storage;
     }
 

@@ -5,7 +5,9 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.operator.cluster.crd.model.JvmOptions;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Resources;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -100,5 +102,21 @@ public class AbstractModelTest {
         } else {
             return null;
         }
+    }
+
+
+    @Test
+    public void testDeserializeSuffixes() {
+        Resources opts = Resources.fromJson("{\"limits\": {\"memory\": \"10Gi\", \"cpu\": \"1\"}, \"requests\": {\"memory\": \"5G\", \"cpu\": 1}}");
+        assertEquals(10737418240L, opts.getLimits().memoryAsLong());
+        assertEquals(1000, opts.getLimits().milliCpuAsInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
+        assertEquals(5000000000L, opts.getRequests().memoryAsLong());
+        assertEquals(1000, opts.getLimits().milliCpuAsInt());
+        assertEquals("1", opts.getLimits().getMilliCpu());
+        AbstractModel abstractModel = new AbstractModel("", "", Labels.forCluster("")) {
+        };
+        abstractModel.setResources(opts);
+        Assert.assertEquals("1", abstractModel.resources().getLimits().get("cpu").getAmount());
     }
 }

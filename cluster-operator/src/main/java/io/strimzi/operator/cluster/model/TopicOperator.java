@@ -10,8 +10,8 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,16 +35,7 @@ public class TopicOperator extends AbstractModel {
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
 
     // Configuration defaults
-    public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", "strimzi/topic-operator:latest");
-    public static final int DEFAULT_REPLICAS = 1;
-    public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
-    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9092;
-    public static final String DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = "900000";
-    public static final String DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = "20000";
-    public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;
+
 
     // Configuration keys
     public static final String KEY_CONFIG = "topic-operator-config";
@@ -76,20 +67,20 @@ public class TopicOperator extends AbstractModel {
 
         super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
         this.name = topicOperatorName(cluster);
-        this.image = DEFAULT_IMAGE;
-        this.replicas = DEFAULT_REPLICAS;
+        this.image = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE;
+        this.replicas = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS;
         this.healthCheckPath = "/";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.healthCheckTimeout = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.healthCheckInitialDelay = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
-        this.reconciliationIntervalMs = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
-        this.zookeeperSessionTimeoutMs = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
+        this.reconciliationIntervalMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
+        this.zookeeperSessionTimeoutMs = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS;
         this.topicConfigMapLabels = defaultTopicConfigMapLabels(cluster);
-        this.topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+        this.topicMetadataMaxAttempts = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     }
 
 
@@ -154,11 +145,11 @@ public class TopicOperator extends AbstractModel {
     }
 
     protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.zookeeperClusterName(cluster) + ":" + DEFAULT_ZOOKEEPER_PORT;
+        return ZookeeperCluster.zookeeperClusterName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperator.DEFAULT_ZOOKEEPER_PORT;
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return KafkaCluster.kafkaClusterName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaCluster.kafkaClusterName(cluster) + ":" + io.strimzi.api.kafka.model.TopicOperator.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     protected static String defaultTopicConfigMapLabels(String cluster) {
@@ -183,7 +174,7 @@ public class TopicOperator extends AbstractModel {
                     kafkaClusterCm.getMetadata().getName(),
                     Labels.fromResource(kafkaClusterCm));
 
-            io.strimzi.operator.cluster.crd.model.TopicOperator tcConfig = io.strimzi.operator.cluster.crd.model.TopicOperator.fromJson(config);
+            io.strimzi.api.kafka.model.TopicOperator tcConfig = io.strimzi.api.kafka.model.TopicOperator.fromJson(config);
 
             topicOperator.setImage(tcConfig.getImage());
             topicOperator.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
@@ -206,7 +197,7 @@ public class TopicOperator extends AbstractModel {
                     namespace,
                     kafkaAssembly.getMetadata().getName(),
                     Labels.fromResource(kafkaAssembly));
-            io.strimzi.operator.cluster.crd.model.TopicOperator tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+            io.strimzi.api.kafka.model.TopicOperator tcConfig = kafkaAssembly.getSpec().getTopicOperator();
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
@@ -250,7 +241,7 @@ public class TopicOperator extends AbstractModel {
             topicOperator.setReconciliationIntervalMs(vars.get(KEY_FULL_RECONCILIATION_INTERVAL_MS));
             topicOperator.setZookeeperSessionTimeoutMs(vars.get(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS));
             topicOperator.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
-            topicOperator.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
+            topicOperator.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
         }
 
         return topicOperator;
@@ -263,8 +254,8 @@ public class TopicOperator extends AbstractModel {
 
         return createDeployment(
                 Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")),
-                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
-                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, DEFAULT_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_TIMEOUT),
+                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT),
+                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT),
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

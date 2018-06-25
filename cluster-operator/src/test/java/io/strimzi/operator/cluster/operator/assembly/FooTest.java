@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.crd.model.ResourcesBuilder;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.ResourcesBuilder;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.runner.RunWith;
 

@@ -10,8 +10,8 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.certs.CertManager;
-import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.rules.MethodRule;
@@ -112,9 +112,13 @@ class ResourceTester<R extends HasMetadata, M extends AbstractModel> implements 
     public Statement apply(Statement base, FrameworkMethod method, Object target) {
         this.prefix = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
         // Parse resource into CM
-        resourceName = cls.isAnnotationPresent(Crd.class) ?
-                prefix + "-" + cls.getAnnotation(Crd.class).spec().names().kind() + ".yaml" :
-                prefix + "-" + cls.getSimpleName() + ".yaml";
+        try {
+            resourceName = CustomResource.class.isAssignableFrom(cls) ?
+                    prefix + "-" + cls.newInstance().getKind() + ".yaml" :
+                    prefix + "-" + cls.getSimpleName() + ".yaml";
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
         URL resource = getClass().getResource(resourceName);
         if (resource == null) {
             model = null;

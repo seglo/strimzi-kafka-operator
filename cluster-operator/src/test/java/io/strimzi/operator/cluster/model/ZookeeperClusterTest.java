@@ -4,13 +4,12 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.strimzi.operator.cluster.ResourceUtils;
-
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -54,7 +53,7 @@ public class ZookeeperClusterTest {
 
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
-        assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
+        assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
                 Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headful.getSpec().getSelector());

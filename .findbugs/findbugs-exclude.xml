@@ -5,6 +5,6 @@
     <Package name="io.strimzi.certs"/>
   </Match>
   <Match>
-    <Class name="~io\.strimzi\.operator\.cluster\.crd\.model\..+(Builder|FluentImpl)(\$.*)?" />
+    <Class name="~io\.strimzi\.api\.kafka\.model\..+(Builder|FluentImpl)(\$.*)?" />
   </Match>
 </FindBugsFilter>

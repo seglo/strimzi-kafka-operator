@@ -11,9 +11,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
-import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.vertx.core.Vertx;
 
 public class KafkaAssemblyCrdOperator extends AbstractResourceOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> {

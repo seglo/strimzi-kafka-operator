@@ -15,7 +15,9 @@ import java.util.stream.Collectors;
 
 /**
  * Represents information about storage to use
+ * @deprecated Replaced with {@link io.strimzi.api.kafka.model.Storage}
  */
+@Deprecated
 public class Storage {
 
     public static final String TYPE_FIELD = "type";

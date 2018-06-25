@@ -241,25 +241,25 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 [options="header"]
 |====
 |Field                                  |Description
-|additionalProperties            1.2+<.<|
-|map
+|watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
+|string
+|image                           1.2+<.<|The image to use for the topic operator
+|string
+|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
+|string
+|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session
+|string
 |affinity                        1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|image                           1.2+<.<|The image to use for the topic operator
-|string
-|reconciliationInterval          1.2+<.<|
-|string
-|reconciliationIntervalSeconds   1.2+<.<|Interval between periodic reconciliations.
-|string
 |resources                       1.2+<.<|
 |<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata
 |integer
-|watchedNamespace                1.2+<.<|The namespace the Topic Operator should watch.
-|string
-|zookeeperSessionTimeoutSeconds  1.2+<.<|Timeout for the Zookeeper session
+|additionalProperties            1.2+<.<|
+|map
+|reconciliationInterval          1.2+<.<|
 |string
 |====
 

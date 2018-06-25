@@ -6,7 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
-import io.strimzi.operator.cluster.crd.model.JsonUtils;
+import io.strimzi.api.kafka.model.JsonUtils;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 
@@ -14,10 +14,10 @@ import java.util.Map;
 
 public final class Utils {
 
-
     private Utils() {
         // no-op
     }
+
     public static int getInteger(Map<String, String> data, String key, int defaultValue) {
         try {
             if (data.get(key) == null) { // value is not set in ConfigMap -> will be used default value

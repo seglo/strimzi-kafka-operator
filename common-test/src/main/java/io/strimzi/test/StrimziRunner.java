@@ -13,6 +13,17 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.junit.ClassRule;
+import org.junit.runner.notification.RunNotifier;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.Annotatable;
+import org.junit.runners.model.FrameworkField;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
+import org.junit.runners.model.TestClass;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,18 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.junit.ClassRule;
-import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.model.Annotatable;
-import org.junit.runners.model.FrameworkField;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.Statement;
-import org.junit.runners.model.TestClass;
 
 import static io.strimzi.test.TestUtils.indent;
 import static io.strimzi.test.k8s.BaseKubeClient.CM;
@@ -62,10 +61,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_PERSISTENT_CM = "../examples/configmaps/cluster-operator/kafka-persistent.yaml";
+    public static final String KAFKA_PERSISTENT_YAML = "../examples/configmaps/cluster-operator/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-operator/kafka-connect.yaml";
-    public static final String CC_INSTALL_DIR = "../examples/install/cluster-operator";
-    public static final String CC_DEPLOYMENT_NAME = "strimzi-cluster-operator";
+    public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
+    public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
 
     private KubeClusterResource clusterResource;
@@ -378,7 +377,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement last = statement;
         for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
             // use the example kafka-ephemeral as a template, but modify it according to the annotation
-            String yaml = getContent(new File(KAFKA_PERSISTENT_CM), node -> {
+            String yaml = getContent(new File(KAFKA_PERSISTENT_YAML), node -> {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");
@@ -430,9 +429,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                     Statement statement) {
         Statement last = statement;
         for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
-            List<String> yamls = Arrays.stream(new File(CC_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
+            List<String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
-                if ("07-deployment.yaml".equals(f.getName())) {
+                if ("08-deployment.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
                     String dockerTag = System.getenv().getOrDefault("DOCKER_TAG", "latest");
                     ObjectNode containerNode = (ObjectNode) node.get("spec").get("template").get("spec").get("containers").get(0);
@@ -486,7 +485,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     for (String yaml: yamls) {
                         kubeClient().clientWithAdmin().createContent(yaml);
                     }
-                    kubeClient().waitForDeployment(CC_DEPLOYMENT_NAME);
+                    kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
                 }
 
                 @Override
@@ -495,7 +494,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     for (int i = yamls.size() - 1; i >= 0; i--) {
                         kubeClient().clientWithAdmin().deleteContent(yamls.get(i));
                     }
-                    kubeClient().waitForResourceDeletion("deployment", CC_DEPLOYMENT_NAME);
+                    kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
                 }
             };
         }

@@ -13,7 +13,7 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
+import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
@@ -456,10 +457,6 @@ public class KafkaAssemblyOperatorTest {
     private List<Secret> getClusterSecrets(String clusterCmName, int replicas) {
         String clusterCmNamespace = "test";
         return ResourceUtils.createKafkaClusterSecretsWithReplicas(clusterCmNamespace, clusterCmName, replicas);
-    }
-
-    private static <T> Set<T> set(T... elements) {
-        return new HashSet<>(asList(elements));
     }
 
     private static <T> Set<T> captured(ArgumentCaptor<T> captor) {

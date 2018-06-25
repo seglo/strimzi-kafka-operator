@@ -15,17 +15,17 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
-import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
-import io.strimzi.operator.cluster.crd.model.EphemeralStorage;
-import io.strimzi.operator.cluster.crd.model.JsonUtils;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.KafkaAssemblyBuilder;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorage;
-import io.strimzi.operator.cluster.crd.model.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.crd.model.Resources;
-import io.strimzi.operator.cluster.crd.model.ResourcesBuilder;
-import io.strimzi.operator.cluster.crd.model.Storage;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.EphemeralStorage;
+import io.strimzi.api.kafka.model.JsonUtils;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.ResourcesBuilder;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
@@ -62,7 +62,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.crd.model.Storage.deleteClaim;
+import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertNotNull;
@@ -117,7 +117,7 @@ public class KafkaAssemblyOperatorMockTest {
     @Parameterized.Parameters(name = "{0}")
     public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
-        io.strimzi.operator.cluster.crd.model.Storage[] storageConfigs = {
+        io.strimzi.api.kafka.model.Storage[] storageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                 .withSize("123")
@@ -201,7 +201,7 @@ public class KafkaAssemblyOperatorMockTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/cluster-operator/07-crd-kafka.yaml"), CustomResourceDefinition.class);
 
         mockClient = new MockKube().withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .withInitialInstances(Collections.singleton(cluster)).end().build();

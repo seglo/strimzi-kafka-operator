@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.vertx.core.AsyncResult;
+import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -302,7 +303,7 @@ public class KafkaConnectS2IAssemblyOperatorTest {
         when(mockCmOps.get(clusterCmNamespace, KafkaConnectS2ICluster.metricsConfigName(clusterCmName))).thenReturn(metricsCm);
 
         // Mock CM patch
-        Set<String> metricsCms = ResourceUtils.set();
+        Set<String> metricsCms = TestUtils.set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
             return Future.succeededFuture();

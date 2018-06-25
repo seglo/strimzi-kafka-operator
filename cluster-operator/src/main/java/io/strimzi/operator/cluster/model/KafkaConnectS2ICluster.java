@@ -27,8 +27,8 @@ import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
-import io.strimzi.operator.cluster.crd.model.JvmOptions;
-import io.strimzi.operator.cluster.crd.model.Resources;
+import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.Resources;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Map;

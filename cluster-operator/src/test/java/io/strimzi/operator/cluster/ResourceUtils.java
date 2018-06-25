@@ -4,27 +4,21 @@
  */
 package io.strimzi.operator.cluster;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.strimzi.operator.cluster.crd.model.JsonUtils;
-import io.strimzi.operator.cluster.crd.model.Kafka;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.KafkaAssemblySpec;
-import io.strimzi.operator.cluster.crd.model.Probe;
-import io.strimzi.operator.cluster.crd.model.RackConfig;
-import io.strimzi.operator.cluster.crd.model.Storage;
-import io.strimzi.operator.cluster.crd.model.Zookeeper;
+import io.strimzi.api.kafka.model.JsonUtils;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblySpec;
+import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.RackConfig;
+import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -34,17 +28,13 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 
 public class ResourceUtils {
@@ -57,7 +47,9 @@ public class ResourceUtils {
      * Creates a map of labels
      * @param pairs (key, value) pairs. There must be an even number, obviously.
      * @return a map of labels
+     * @deprecated Use method method in TestUtils
      */
+    @Deprecated
     public static Map<String, String> labels(String... pairs) {
         if (pairs.length % 2 != 0) {
             throw new IllegalArgumentException();
@@ -258,8 +250,8 @@ public class ResourceUtils {
     }
 
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
-                                                        String image, int healthDelay, int healthTimeout,
-                                                        String metricsCmJson, String kafkaConfigurationJson) {
+                                                   String image, int healthDelay, int healthTimeout,
+                                                   String metricsCmJson, String kafkaConfigurationJson) {
         return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, "{}",
                 "{\"type\": \"ephemeral\"}", null, null);
@@ -313,7 +305,7 @@ public class ResourceUtils {
                 zk.setMetrics(om.readValue(metricsCmJson, typeRef));
             }
 
-            spec.setTopicOperator(io.strimzi.operator.cluster.crd.model.TopicOperator.fromJson(topicOperator));
+            spec.setTopicOperator(io.strimzi.api.kafka.model.TopicOperator.fromJson(topicOperator));
 
             spec.setZookeeper(zk);
             result.setSpec(spec);
@@ -403,49 +395,5 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static <T> Set<T> set(T... elements) {
-        return new HashSet(asList(elements));
-    }
-
-    public static <T> Map<T, T> map(T... pairs) {
-        if (pairs.length % 2 != 0) {
-            throw new IllegalArgumentException();
-        }
-        Map<T, T> result = new HashMap<>(pairs.length / 2);
-        for (int i = 0; i < pairs.length; i += 2) {
-            result.put(pairs[i], pairs[i + 1]);
-        }
-        return result;
-    }
-
-    public static <T> T fromYaml(String resource, Class<T> c) {
-        return fromYaml(resource, c, false);
-    }
-
-    public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
-        URL url = c.getResource(resource);
-        if (url == null) {
-            return null;
-        }
-        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
-        try {
-            return mapper.readValue(url, c);
-        } catch (InvalidFormatException e) {
-            throw new IllegalArgumentException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static <T> String toYamlString(T instance) {
-        ObjectMapper mapper = new YAMLMapper()
-                .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            return mapper.writeValueAsString(instance);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
 }

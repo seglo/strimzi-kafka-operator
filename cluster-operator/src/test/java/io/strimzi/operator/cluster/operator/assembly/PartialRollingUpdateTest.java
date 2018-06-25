@@ -10,11 +10,11 @@ import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.cluster.Reconciliation;
-import io.strimzi.operator.cluster.crd.DoneableKafkaAssembly;
-import io.strimzi.operator.cluster.crd.KafkaAssemblyList;
-import io.strimzi.operator.cluster.crd.model.JsonUtils;
-import io.strimzi.operator.cluster.crd.model.KafkaAssembly;
-import io.strimzi.operator.cluster.crd.model.KafkaAssemblyBuilder;
+import io.strimzi.api.kafka.DoneableKafkaAssembly;
+import io.strimzi.api.kafka.KafkaAssemblyList;
+import io.strimzi.api.kafka.model.JsonUtils;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaAssemblyBuilder;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
-import static io.strimzi.operator.cluster.ResourceUtils.set;
+import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
 
 @RunWith(VertxUnitRunner.class)
@@ -50,6 +50,7 @@ public class PartialRollingUpdateTest {
 
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
+    public static final String KAFKA_CRD_FILE = "../examples/install/cluster-operator/07-crd-kafka.yaml";
 
     private Vertx vertx;
     private KafkaAssembly cluster;
@@ -106,7 +107,7 @@ public class PartialRollingUpdateTest {
                 .endSpec()
                 .build();
 
-        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile(KAFKA_CRD_FILE), CustomResourceDefinition.class);
 
         KubernetesClient bootstrapClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
@@ -149,7 +150,7 @@ public class PartialRollingUpdateTest {
     }
 
     private void startKube() {
-        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile("../examples/install/crd/kafka-crd.yaml"), CustomResourceDefinition.class);
+        CustomResourceDefinition kafkaAssemblyCrd = JsonUtils.fromYaml(TestUtils.readFile(KAFKA_CRD_FILE), CustomResourceDefinition.class);
 
         this.mockClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)

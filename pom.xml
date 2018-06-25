@@ -39,15 +39,21 @@
     <modules>
         <module>common-test</module>
         <module>crd-generator</module>
+        <module>api</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
-        <module>systemtest</module>
         <module>init-kafka</module>
         <module>certificate-manager</module>
+        <module>systemtest</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client</artifactId>

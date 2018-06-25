@@ -5,6 +5,8 @@
 
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.Kafka;
+
 import java.util.List;
 import java.util.Map;
 
@@ -15,14 +17,12 @@ import static java.util.Arrays.asList;
  */
 public class KafkaConfiguration extends AbstractConfiguration {
 
-    public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
-            + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
-            + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
+
 
     private static final List<String> FORBIDDEN_OPTIONS;
 
     static {
-        FORBIDDEN_OPTIONS = asList(FORBIDDEN_PREFIXES.split(", "));
+        FORBIDDEN_OPTIONS = asList(Kafka.FORBIDDEN_PREFIXES.split(", "));
     }
 
     /**

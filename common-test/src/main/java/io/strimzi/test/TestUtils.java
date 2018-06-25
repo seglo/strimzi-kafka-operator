@@ -4,7 +4,13 @@
  */
 package io.strimzi.test;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,11 +21,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public final class TestUtils {
@@ -160,5 +170,40 @@ public final class TestUtils {
     public static void assertResourceMatch(Class<?> cls, String resourceName, String actual) throws IOException {
         String r = readResource(cls, resourceName);
         assertEquals(r, actual);
+    }
+
+
+    public static <T> Set<T> set(T... elements) {
+        return new HashSet(asList(elements));
+    }
+
+    public static <T> T fromYaml(String resource, Class<T> c) {
+        return fromYaml(resource, c, false);
+    }
+
+    public static <T> T fromYaml(String resource, Class<T> c, boolean ignoreUnknownProperties) {
+        URL url = c.getResource(resource);
+        if (url == null) {
+            return null;
+        }
+        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
+        try {
+            return mapper.readValue(url, c);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> String toYamlString(T instance) {
+        ObjectMapper mapper = new YAMLMapper()
+                .disable(YAMLGenerator.Feature.USE_NATIVE_TYPE_ID)
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        try {
+            return mapper.writeValueAsString(instance);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
