@@ -198,8 +198,8 @@ public class ClusterOperator extends AbstractVerticle {
         getVertx().executeBlocking(
             future -> {
 
-                Watchable<Watch, Watcher<C>> configMapConfigMapListBooleanWatchWatcherFilterWatchListDeletable = fn.get();
-                Watch watch = configMapConfigMapListBooleanWatchWatcherFilterWatchListDeletable.watch(new Watcher<C>() {
+                Watchable<Watch, Watcher<C>> watchable = fn.get();
+                Watch watch = watchable.watch(new Watcher<C>() {
                     @Override
                     public void eventReceived(Action action, C cm) {
 

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.sundr.builder.annotations.Buildable;
 
@@ -58,6 +59,10 @@ public class KafkaAssembly extends CustomResource {
     public static final String RESOURCE_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
+
+    static {
+        KubernetesDeserializer.registerCustomKind(RESOURCE_KIND, KafkaAssembly.class);
+    }
 
     private String apiVersion;
     private ObjectMeta metadata;
