@@ -24,7 +24,8 @@ spec:
       "-Xmx": 1g
       "-Xms": "1G"
       "-server": true
-      "-XX": [UseG1GC: "true"]
+      "-XX":
+        UseG1GC: "true"
   zookeeper:
     replicas: 1
     readiness:
@@ -46,7 +47,8 @@ spec:
       "-Xmx": 600m
       "-Xms": 300m
       "-server": true
-      "-XX": [UseG1GC: "true"]
+      "-XX":
+        UseG1GC: "true"
   topicOperator:
     resources:
       limits:
