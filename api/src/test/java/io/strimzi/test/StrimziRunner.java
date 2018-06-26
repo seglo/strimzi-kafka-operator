@@ -438,7 +438,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     private String classpathResourceName(Annotatable element) {
         if (element instanceof TestClass) {
-            return name(element) + ".yaml";
+            return ((TestClass) element).getJavaClass().getSimpleName() + ".yaml";
         } else if (element instanceof FrameworkMethod) {
             return testClass(element).getSimpleName() + "." + ((FrameworkMethod) element).getName() + ".yaml";
         } else if (element instanceof FrameworkField) {

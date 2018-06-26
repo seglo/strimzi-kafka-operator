@@ -72,7 +72,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
             "internal.key.converter=org.apache.kafka.connect.json.JsonConverter\\n" +
             "internal.value.converter.schemas.enable=false\\n" +
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\\n";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
 
     @Test

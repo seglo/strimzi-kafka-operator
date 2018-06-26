@@ -1,5 +1,4 @@
-
-apiVersion: v1alpha1
+apiVersion: kafka.strimzi.io/v1alpha1
 kind: Kafka
 metadata:
   name: jvm-resource-cluster
