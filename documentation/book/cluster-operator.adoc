@@ -1,18 +1,18 @@
 == Cluster Operator
 
-The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble. As part of the Kafka cluster,
-it can also deploy the topic operator which provides operator-style topic management via ConfigMaps.
+The Cluster Operator is in charge of deploying a Kafka cluster alongside a Zookeeper ensemble.
+As part of the Kafka cluster, it can also deploy the topic operator which provides operator-style topic management via ConfigMaps.
 The Cluster Operator is also able to deploy a Kafka Connect cluster which connects to an existing Kafka cluster.
 On {OpenShiftName} such a cluster can be deployed using the Source2Image feature, providing an easy way of including more connectors.
 
+.Example Architecture diagram of the Cluster Operator.
 image::cluster_operator.png[Cluster Operator]
 
 When the Cluster Operator is up, it starts to "watch" for certain {ProductPlatformName} resources containing the  desired Kafka or Kafka Connect cluster configuration.
 A `Kafka` resource is used for Kafka cluster configuration, and a `ConfigMap` is used for Kafka Connect cluster configuration.
 The ConfigMaps for Kafka Connect clusters need to have a specific label which is, by default, `strimzi.io/kind=cluster` (as described <<Format of the cluster ConfigMap,later>>) that can be changed through a corresponding environment variable.
 
-When a new desired resource (that is, a Kafka resource or a Kafka Connect ConfigMap) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName}
-resources, such as StatefulSets, ConfigMaps, Services etc.
+When a new desired resource (that is, a Kafka resource or a Kafka Connect ConfigMap) is created in the {ProductPlatformName} cluster, the operator gets the cluster configuration from the desired resource and starts creating a new Kafka or Kafka Connect cluster by creating the necessary other {ProductPlatformName} resources, such as StatefulSets, Services, ConfigMaps etc.
 
 Every time the desired resource is updated by the user, the operator performs corresponding updates on the {ProductPlatformName} resources which make up the Kafka or Kafka Connect cluster.
 Resources are either patched or deleted and then re-created in order to make the Kafka or Kafka Connect cluster reflect the state of the desired cluster resource.
@@ -27,166 +27,77 @@ Although the operator reacts to all notifications about the desired cluster reso
 if the operator is not running, or if a notification is not received for any reason, the desired resources will get out of sync
 with the state of the running {ProductPlatformName} cluster.
 
-In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so
-that it can compare the state of the desired resources with the current cluster deployments in order to have
-a consistent state across all of them.
+In order to handle failovers properly, a periodic reconciliation process is executed by the Cluster Operator so that it can compare the state of the desired resources with the current cluster deployments in order to have a consistent state across all of them.
 
 [[kafka_assembly_details]]
 === Format of the `Kafka` resource
 
-The full API is described in <<kafka_resource_reference>>
+The full API is described in <<kafka_resource_reference>>.
 
 Whatever other labels are applied to the desired Kafka resource will also be applied to the {ProductPlatformName} resources making up the Kafka cluster.
-This provides a convenient mechanism for those resource to be labelled
-in whatever way the user requires.
+This provides a convenient mechanism for those resource to be labelled in whatever way the user requires.
 
-[[config_map_details]]
-=== Format of the Kafka Connect cluster ConfigMap
-
-The operator watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get configuration for a Kafka Connect cluster to deploy.
-
-In order to distinguish which "type" of cluster to deploy, the operator checks the `strimzi.io/type` label which can have one of the the following values :
-
-* `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
-* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features (works only with {OpenShiftName})
-
-Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
-This provides a convenient mechanism for those resource to be labelled
-in whatever way the user requires.
-
-The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the 
-following sections.
-
-[[kafka_config_map_details]]
-==== Kafka
-
-In order to configure a Kafka cluster deployment, it's possible to specify the following fields in the `data` section of 
-the related ConfigMap :
-
-`kafka-nodes`::
-Number of Kafka broker nodes. Default is 3.
-`kafka-image`::
-The Docker image to use for the Kafka brokers. Default is determined by the value of the `<<STRIMZI_DEFAULT_KAFKA_IMAGE,STRIMZI_DEFAULT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
-`init-kafka-image`::
-The Docker image to use for the init container which does some initial configuration work (i.e. rack support).
-Default is determined by the value of the `<<STRIMZI_DEFAULT_INIT_KAFKA_IMAGE,STRIMZI_DEFAULT_INIT_KAFKA_IMAGE>>` environment variable of the Cluster Operator.
-`kafka-healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Kafka broker node. Default is 15.
-`kafka-healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Kafka broker node. Default is 5.
-`kafka-config`::
-A JSON string with Kafka configuration. See section <<kafka_configuration_json_config>> for more details.
-`kafka-storage`::
-A JSON string representing the storage configuration for the Kafka broker nodes. See section <<storage_configuration_json_config>> for more details.
-`kafka-metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Kafka broker nodes.
-When this field is absent no metrics will be exposed.
-`kafka-resources`::
-A JSON string configuring the resource limits and requests for Kafka broker containers. The accepted JSON format is
-described in the <<resources_json_config>> section.
-`kafka-jvmOptions`::
-A JSON string allowing the JVM running Kafka to be configured.
-The accepted JSON format is described in the <<jvm_json_config>> section.
-`kafka-rack`::
-A JSON string allowing the Kafka rack feature to be configured and used in rack-aware partition assignment for fault tolerance.
-The accepted JSON format is described in the <<kafka_rack>> section.
-`kafka-affinity`::
-A JSON or YAML string allowing control over how the Kafka pods are scheduled to nodes.
-The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
-See section <<affinity>> for more details.
-`zookeeper-nodes`::
-Number of Zookeeper nodes.
-`zookeeper-image`::
-The Docker image to use for the Zookeeper nodes. Default is determined by the value of the
-`<<STRIMZI_DEFAULT_ZOOKEEPER_IMAGE,STRIMZI_DEFAULT_ZOOKEEPER_IMAGE>>` environment variable of the Cluster Operator.
-`zookeeper-healthcheck-delay`::
-The initial delay for the liveness and readiness probes for each Zookeeper node. Default is 15.
-`zookeeper-healthcheck-timeout`::
-The timeout on the liveness and readiness probes for each Zookeeper node. Default is 5.
-`zookeeper-config`::
-A JSON string with Zookeeper configuration. See section <<zookeeper_configuration_json_config>> for more details.
-`zookeeper-storage`::
-A JSON string representing the storage configuration for the Zookeeper nodes. See section <<storage_configuration_json_config>> for more details.
-`zookeeper-metrics-config`::
-A JSON string representing the JMX exporter configuration for exposing metrics from Zookeeper nodes.
-When this field is absent no metrics will be exposed.
- eans having no metrics exposed.
-`zookeeper-resources`::
-A JSON string configuring the resource limits and requests for Zookeeper broker containers. The accepted JSON format is
-described in the <<resources_json_config>> section.
-`zookeeper-jvmOptions`::
-A JSON string allowing the JVM running Zookeeper to be configured. The accepted JSON format is described in the <<jvm_json_config>> section.
-`zookeeper-affinity`::
-A JSON or YAML string allowing control over how the Zookeeper pods are scheduled to nodes.
-The format of the corresponding key is the same as the content supported in the Pod `affinity` in {ProductPlatformName}.
-See section <<affinity>> for more details.
-`topic-operator-config`::
-A JSON string representing the topic operator configuration. See the <<topic_operator_json_config>> documentation for
-further details. More info about the topic operator in the related <<Topic operator>> documentation page.
- 
-The following is an example of a ConfigMap for a Kafka cluster.
+The following is an example of a Kafka resource.
 
 .Example Kafka cluster ConfigMap
 [source,yaml,options="nowrap",subs="attributes"]
 ----
-apiVersion: v1
-kind: ConfigMap
+apiVersion: kafka.strimzi.io/v1alpha1
+kind: Kafka
 metadata:
   name: my-cluster
   labels:
     strimzi.io/kind: cluster
     strimzi.io/type: kafka
-data:
-  kafka-nodes: "3"
-  kafka-image: "{DockerKafka}"
-  kafka-healthcheck-delay: "15"
-  kafka-healthcheck-timeout: "5"
-  kafka-config: |-
-    {
-      "offsets.topic.replication.factor": 3,
-      "transaction.state.log.replication.factor": 3,
-      "transaction.state.log.min.isr": 2
-    }
-  kafka-storage: |-
-    { "type": "ephemeral" }
-  kafka-metrics-config: |-
-    {
-      "lowercaseOutputName": true,
-      "rules": [
-          {
-            "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*&gt;&lt;&gt;Count",
-            "name": "kafka_server_$1_$2_total"
-          },
-          {
-            "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*, topic=(.+)&gt;&lt;&gt;Count",
-            "name": "kafka_server_$1_$2_total",
-            "labels":
+spec:
+  kafka:
+    replicas: 3
+    image: "{DockerKafka}"
+    kafka-healthcheck-delay: "15"
+    kafka-healthcheck-timeout: "5"
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+    storage:
+      type: ephemeral
+    metrics:
+      {
+        "lowercaseOutputName": true,
+        "rules": [
             {
-              "topic": "$3"
+              "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*&gt;&lt;&gt;Count",
+              "name": "kafka_server_$1_$2_total"
+            },
+            {
+              "pattern": "kafka.server&lt;type=(.+), name=(.+)PerSec\\w*, topic=(.+)&gt;&lt;&gt;Count",
+              "name": "kafka_server_$1_$2_total",
+              "labels":
+              {
+                "topic": "$3"
+              }
             }
-          }
-      ]
-    }
-  zookeeper-nodes: "1"
-  zookeeper-image: "{DockerZookeeper}"
-  zookeeper-healthcheck-delay: "15"
-  zookeeper-healthcheck-timeout: "5"
-  zookeeper-config: |-
-    {
-      "timeTick": 2000,
-      "initLimit": 5,
-      "syncLimit": 2,
-      "autopurge.purgeInterval": 1
-    }
-  zookeeper-storage: |-
-    { "type": "ephemeral" }
-  zookeeper-metrics-config: |-
-    {
-      "lowercaseOutputName": true
-    }
+        ]
+      }
+  zookeeper:
+    replicas: 1
+    image: {DockerZookeeper}
+    healthcheck-delay: "15"
+    healthcheck-timeout: "5"
+    config:
+      timeTick: 2000,
+      initLimit: 5,
+      syncLimit: 2,
+      autopurge.purgeInterval: 1
+    storage:
+      type: ephemeral
+    metrics:
+      {
+        "lowercaseOutputName": true
+      }
 ----
 
-The resources created by the Cluster Operator into the {ProductPlatformName} cluster will be the following :
+The resources created by the Cluster Operator in the {ProductPlatformName} cluster will be the following :
 
 * `[cluster-name]-zookeeper` StatefulSet which is in charge to create the Zookeeper node pods
 * `[cluster-name]-kafka` StatefulSet which is in charge to create the Kafka broker pods
@@ -202,14 +113,14 @@ a volume by the Kafka broker pods
 [[kafka_configuration_json_config]]
 ===== Kafka Configuration
 
-The `kafka-config` field allows detailed configuration of Apache Kafka. This field should contain a JSON object with Kafka
+The `spec.kafka.config` object allows detailed configuration of Apache Kafka. This field should contain a JSON object with Kafka
 configuration options as keys. The values could be in one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-The `kafka-config` field supports all Kafka configuration options with the exception of options related to:
+The `spec.kafka.config` object supports all Kafka configuration options with the exception of options related to:
 
 * Security (Encryption, Authentication and Authorization)
 * Listener configuration
@@ -245,40 +156,42 @@ below.
 .Example Kafka configuration
 [source,json]
 ----
-{
-  "num.partitions": 1,
-  "num.recovery.threads.per.data.dir": 1,
-  "default.replication.factor": 3,
-  "offsets.topic.replication.factor": 3,
-  "transaction.state.log.replication.factor": 3,
-  "transaction.state.log.min.isr": 1,
-  "log.retention.hours": 168,
-  "log.segment.bytes": 1073741824,
-  "log.retention.check.interval.ms": 300000,
-  "num.network.threads": 3,
-  "num.io.threads": 8,
-  "socket.send.buffer.bytes": 102400,
-  "socket.receive.buffer.bytes": 102400,
-  "socket.request.max.bytes": 104857600,
-  "group.initial.rebalance.delay.ms": 0
-}
+spec:
+  kafka:
+    # ... configuration of replicas, image etc.
+    config:
+      num.partitions: 1,
+      num.recovery.threads.per.data.dir: 1,
+      default.replication.factor: 3,
+      offsets.topic.replication.factor: 3,
+      transaction.state.log.replication.factor: 3,
+      transaction.state.log.min.isr: 1,
+      log.retention.hours: 168,
+      log.segment.bytes: 1073741824,
+      log.retention.check.interval.ms: 300000,
+      num.network.threads: 3,
+      num.io.threads: 8,
+      socket.send.buffer.bytes: 102400,
+      socket.receive.buffer.bytes: 102400,
+      socket.request.max.bytes: 104857600,
+      group.initial.rebalance.delay.ms: 0
 ----
 
 NOTE:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
-Kafka cluster might not start or might become unstable. In such cases, the configuration in the `kafka-config` field
+Kafka cluster might not start or might become unstable. In such cases, the configuration in the `spec.kafka.config` object
 should be fixed and the cluster operator will roll out the new configuration to all Kafka brokers.
 
 [[zookeeper_configuration_json_config]]
 ===== Zookeeper Configuration
 
-The `zookeeper-config` field allows detailed configuration of Apache Zookeeper. This field should contain a JSON object
+The `spec.zookeeper.config` object allows detailed configuration of Apache Zookeeper. This field should contain a JSON object
 with Zookeeper configuration options as keys. The values could be in one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-The `zookeeper-config` field supports all Zookeeper configuration options with the exception of options related to:
+The `spec.zookeeper.config` object supports all Zookeeper configuration options with the exception of options related to:
 
 * Security (Encryption, Authentication and Authorization)
 * Listener configuration
@@ -296,21 +209,22 @@ Specifically, all configuration options with keys starting with one of the follo
 * `requireClientAuthScheme`
 
 All other options will be passed to Zookeeper. A list of all the available options can be found on the
-http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html[Zookeeper website]. An example `zookeeper-config` field is provided
+http://zookeeper.apache.org/doc/r3.4.12/zookeeperAdmin.html[Zookeeper website]. An example `spec.zookeeper.config` object is provided
 below.
 
 .Example Zookeeper configuration
 [source,json]
 ----
-{
-  "timeTick": 2000,
-  "initLimit": 5,
-  "syncLimit": 2,
-  "quorumListenOnAllIPs": true,
-  "maxClientCnxns": 0,
-  "autopurge.snapRetainCount": 3,
-  "autopurge.purgeInterval": 1
-}
+spec:
+  zookeeper:
+    config:
+      timeTick: 2000,
+      initLimit: 5,
+      syncLimit: 2,
+      quorumListenOnAllIPs: true,
+      maxClientCnxns: 0,
+      autopurge.snapRetainCount: 3,
+      autopurge.purgeInterval: 1
 ----
 
 Selected options have default values:
@@ -320,10 +234,10 @@ Selected options have default values:
 * `syncLimit` with default value `2`
 * `autopurge.purgeInterval` with default value `1`
 
-These options will be automatically configured in case they are not present in the `zookeeper-config` field.
+These options will be automatically configured in case they are not present in the `spec.zookeeper.config` object.
 
 NOTE:: The Cluster Operator doesn't validate the provided configuration. When invalid configuration is provided, the
-Zookeeper cluster might not start or might become unstable. In such cases, the configuration in the `zookeeper-config` field
+Zookeeper cluster might not start or might become unstable. In such cases, the configuration in the `spec.zookeeper.config` object
 should be fixed and the cluster operator will roll out the new configuration to all Zookeeper nodes.
 
 [[storage_configuration_json_config]]
@@ -331,28 +245,27 @@ should be fixed and the cluster operator will roll out the new configuration to 
 
 Both Kafka and Zookeeper save data to files.
 
-{ProductName} allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent
-volumes.
-It's possible to provide the storage configuration in the related ConfigMap using a JSON string as value for the 
-`kafka-storage` and `zookeeper-storage` fields.
+{ProductName} allows to save such data in an "ephemeral" way (using `emptyDir`) or in a "persistent-claim" way using persistent volumes.
+It is possible to provide the storage configuration in the `spec.kafka.storage` and `spec.zookeeper.storage` objects.
 
-IMPORTANT: The `kafka-storage` and `zookeeper-storage` fields can't be changed when the cluster is up.
+IMPORTANT: The `spec.kafka.storage` and `spec.zookeeper.storage` objects cannot be changed when the cluster is up.
 
-The JSON representation has a mandatory `type` field for specifying the type of storage to use ("ephemeral" or "persistent-claim").
+The storage object has a mandatory `type` field for specifying the type of storage to use which must be either "ephemeral" or "persistent-claim".
 
-The "ephemeral" storage is really simple to configure and the related JSON string has the following structure.
+The "ephemeral" storage is really simple to configure.
 
-.Ephemeral storage JSON
+.Example `ephemeral` storage for Kafka
 [source,json]
 ----
-{ "type": "ephemeral" }
-
+spec:
+  kafka:
+    storage:
+      type: ephemeral
 ----
 
-WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with
-Zookeeper node restarts which could happen via updates in the cluster ConfigMap.
+WARNING: If the Zookeeper cluster is deployed using "ephemeral" storage, the Kafka brokers can have problems dealing with Zookeeper node restarts which could happen via updates in the Kafka resource.
 
-In case of "persistent-claim" type the following fields can be provided as well :
+In case of "persistent-claim" type the following fields can be provided as well:
 
 * `size`: defines the size of the persistent volume claim (i.e 1Gi) - mandatory
 * `class` : the {ProductPlatformName} https://kubernetes.io/docs/concepts/storage/storage-classes/[storage class] to use
@@ -362,62 +275,63 @@ inner JSON object with key:value representing labels for selecting such a volume
 * `delete-claim`: boolean value which specifies if the persistent volume claim has to be deleted when the cluster is un-deployed.
 Default is `false` - optional
 
-.Persistent storage JSON with 1Gi as size
+.Example configuring Kafka with `persistent-storage` and 1Gi `size`
 [source,json]
 ----
-{ "type": "persistent-claim", "size": "1Gi" }
+spec:
+  kafka:
+    storage:
+      type: persistent-claim
+      size: 1Gi
 ----
 
-This example demonstrates use of a storage class.
+The following example demonstrates use of a storage class.
 
-.Persistent storage JSON using "storage class"
+.Example configuring Kafka with `persistent-storage` using a storage class
 [source,json]
 ----
-{
-  "type": "persistent-claim",
-  "size": "1Gi",
-  "class": "my-storage-class"
-}
+spec:
+  kafka:
+    storage:
+      type: persistent-claim
+      size: 1Gi
+      class: my-storage-class
 ----
 
-Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (i.e. an SSD)
+Finally, a selector can be used in order to select a specific labeled persistent volume which provides some needed features (such as an SSD)
 
-.Persistent storage JSON with "match labels" selector
+.Example configuring Kafka with "match labels" selector
 [source,json]
 ----
-{
-  "type": "persistent-claim",
-  "size": "1Gi",
-  "selector":
-  {
-    "matchLabels":
-    {
-      "hdd-type": "ssd"
-    }
-  },
-  "delete-claim": true
-}
+spec:
+  kafka:
+    storage:
+      type: persistent-claim
+      size: 1Gi
+      selector:
+        matchLabels:
+          "hdd-type": "ssd"
+      deleteClaim: true
 ----
 
-When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources
-are generated :
+When the "persistent-claim" is used, other than the resources already described in the <<Kafka>> section, the following resources are generated :
 
 * `data-[cluster-name]-kafka-[idx]` Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `[idx]`
-* `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the
-Zookeeper node pod `[idx]`
+* `data-[cluster-name]-zookeeper-[idx]` Persistent Volume Claim for the volume used for storing data for the Zookeeper node pod `[idx]`
+
+See <<kafka.strimzi.io-v1alpha1-type-EphemeralStorage>> and <<kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage>> for further details.
 
 ===== Metrics
 
-Because {ProductName} uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics
-on each node, the JSON string used for metrics configuration in the cluster ConfigMap reflects the related JMX exporter 
-configuration file. For this reason, you can find more information on how to use it in the corresponding GitHub repo.
+Because {ProductName} uses the [JMX exporter](https://github.com/prometheus/jmx_exporter) in order to expose metrics on each node, the JSON string used for metrics configuration in the Kafka resource of Kafka Connect cluster ConfigMap reflects the related JMX exporter configuration file.
+For this reason, you can find more information on how to use it in the corresponding GitHub repo.
 
 For more information about using the metrics with Prometheus and Grafana, see <<_metrics>>
 
 [[resources_json_config]]
 ===== Resource limits and requests
 
-It is possible to configure {ProductPlatformName} resource limits and requests on several containers using a JSON object.
+It is possible to configure {ProductPlatformName} resource limits and requests on several containers using a JSON or YAML object.
 The object may have a `requests` and a `limits` property, each having the same schema, consisting of `cpu` and `memory` properties.
 The {ProductPlatformName} syntax is used for the values of `cpu` and `memory`.
 
@@ -671,6 +585,20 @@ More information about these configuration parameters in the related <<Topic Ope
 
 [[kafka_connect_config_map_details]]
 ==== Kafka Connect
+
+The operator watches for ConfigMaps having the label `strimzi.io/kind=cluster` in order to find and get configuration for a Kafka Connect cluster to deploy.
+
+In order to distinguish which "type" of cluster to deploy, the operator checks the `strimzi.io/type` label which can have one of the the following values :
+
+* `kafka-connect`: the ConfigMap provides configuration for a Kafka Connect cluster deployment
+* `kafka-connect-s2i`: the ConfigMap provides configuration for a Kafka Connect cluster deployment using Build and Source2Image features (works only with {OpenShiftName})
+
+Whatever other labels are applied to the ConfigMap will also be applied to the {ProductPlatformName} resources making up the Kafka Connect cluster.
+This provides a convenient mechanism for those resource to be labelled
+in whatever way the user requires.
+
+The `data` section of such ConfigMaps contains different keys depending on the "type" of deployment as described in the
+following sections.
 
 In order to configure a Kafka Connect cluster deployment, it's possible to specify the following fields in the `data` section of 
 the related ConfigMap:
