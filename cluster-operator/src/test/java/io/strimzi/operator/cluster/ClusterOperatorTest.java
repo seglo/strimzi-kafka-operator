@@ -65,6 +65,7 @@ public class ClusterOperatorTest {
         KubernetesClient client = mock(KubernetesClient.class);
         MixedOperation mockCms = mock(MixedOperation.class);
         when(client.configMaps()).thenReturn(mockCms);
+        when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
 
@@ -110,7 +111,7 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > namespaceList.size()) {
+        if (numWatchers.get() > 2 * namespaceList.size()) {
             context.fail("Looks like there were more watchers than namespaces");
         }
     }
