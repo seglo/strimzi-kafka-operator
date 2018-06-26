@@ -66,10 +66,6 @@
             <!-- use provided scope because this is not needed at runtime -->
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>common-test</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

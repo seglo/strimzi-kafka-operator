@@ -4,7 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.test.TestUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -69,7 +68,7 @@ public class JvmOptionsTest {
                 "            \"key5\": 10}" +
                 "}");
 
-        assertEquals(TestUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10"), opts.getXx());
+        assertEquals(ModelTestUtils.map("key1", "value1", "key2", "value2", "key3", "true", "key4", "true", "key5", "10"), opts.getXx());
     }
 }
 

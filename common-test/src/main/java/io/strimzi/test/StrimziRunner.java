@@ -61,7 +61,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      * in the state it was in when the test failed.
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
-    public static final String KAFKA_PERSISTENT_YAML = "../examples/configmaps/cluster-operator/kafka-persistent.yaml";
+    public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
     public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-operator/kafka-connect.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
@@ -281,6 +281,17 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
+    <T> String getContent(Class<T> cls, File file, Consumer<T> edit) {
+        YAMLMapper mapper = new YAMLMapper();
+        try {
+            T node = mapper.readValue(file, cls);
+            edit.accept(node);
+            return mapper.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Statement withDump(Statement statement) {
         return new Bracket(statement) {
             @Override
@@ -377,7 +388,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement last = statement;
         for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
             // use the example kafka-ephemeral as a template, but modify it according to the annotation
-            String yaml = getContent(new File(KAFKA_PERSISTENT_YAML), node -> {
+            String yaml = getContent(KafkaAssembly.class, new File(KAFKA_PERSISTENT_YAML), node -> {
                 JsonNode metadata = node.get("metadata");
                 ((ObjectNode) metadata).put("name", cluster.name());
                 JsonNode data = node.get("data");

@@ -64,7 +64,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final String TOPIC_NAME = "test-topic";
-    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/07-deployment.yaml";
+    private static final String CO_DEPLOYMENT_CONFIG = "../examples/install/cluster-operator/08-deployment.yaml";
 
     @BeforeClass
     public static void waitForCc() {

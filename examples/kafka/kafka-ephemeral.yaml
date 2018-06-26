@@ -17,7 +17,7 @@ spec:
       transaction.state.log.min.isr: 2
     storage:
       type: ephemeral
-    metricsConfig:
+    metrics:
       lowercaseOutputName: true,
       rules:
         - pattern: "kafka.server<type=(.+), name=(.+)PerSec\\w*><>Count",
@@ -36,6 +36,6 @@ spec:
       timeout: "5"
     storage:
       type: ephemeral
-    metricsConfig:
+    metrics:
       lowercaseOutputName: true
   topic-operator-config: { }
