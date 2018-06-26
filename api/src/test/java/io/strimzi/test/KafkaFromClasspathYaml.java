@@ -5,7 +5,6 @@
 package io.strimzi.test;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -17,17 +16,15 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Repeatable(KafkaCluster.Container.class)
-public @interface KafkaCluster {
+public @interface KafkaFromClasspathYaml {
 
-    String name();
-    int kafkaNodes() default 3;
-    int zkNodes() default 1;
-    CmData[] config() default {};
-
-    @Target({ElementType.METHOD, ElementType.TYPE})
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface Container {
-        KafkaCluster[] value();
-    }
+    /**
+     * The name of the classpath resource, relative to the annotated element, containing the YAML.
+     * The YAML should include exactly one `kind: Kafka` resource, but may also include other resources.
+     * If no value is given the default resource
+     * is {@code [classname].yaml} when the annotation was applied to a class,
+     * or {@code [classname].[methodname].yaml} when the annotation was applied to a
+     * {@code @Test}-annotated method.
+     */
+    String[] value() default {};
 }

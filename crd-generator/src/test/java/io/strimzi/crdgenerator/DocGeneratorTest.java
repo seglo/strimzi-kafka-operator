@@ -8,20 +8,21 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URISyntaxException;
 
 import static io.strimzi.crdgenerator.DocGenerator.classInherits;
-import static io.strimzi.test.TestUtils.assertResourceMatch;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DocGeneratorTest {
 
     @Test
-    public void simpleTest() throws IOException, ClassNotFoundException {
+    public void simpleTest() throws IOException, ClassNotFoundException, URISyntaxException {
         assertTrue(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class) != null);
         StringWriter w = new StringWriter();
         DocGenerator crdGenerator = new DocGenerator(1, ExampleCrd.class, w, new KubeLinker("{KubeApiReferenceBase}"));
         crdGenerator.generate();
         String s = w.toString();
-        assertResourceMatch(DocGeneratorTest.class, "simpleTest.adoc", s);
+        assertEquals(CrdTestUtils.readResource("simpleTest.adoc"), s);
     }
 }

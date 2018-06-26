@@ -1,4 +1,4 @@
-PROJECT_NAME=common-test
+PROJECT_NAME=api
 
 docker_build: java_install
 docker_push:

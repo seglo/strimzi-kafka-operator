@@ -15,14 +15,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -120,41 +119,32 @@ public final class TestUtils {
      */
     public static String readResource(Class<?> cls, String resourceName) {
         try {
-            InputStream expectedStream = cls.getResourceAsStream(resourceName);
-            if (expectedStream != null) {
-                try {
-                    StringBuilder sb = new StringBuilder();
-                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(expectedStream, StandardCharsets.UTF_8))) {
-                        String line = reader.readLine();
-                        while (line != null) {
-                            sb.append(line).append("\n");
-                            line = reader.readLine();
-                        }
-                        return sb.toString();
-                    }
-                } finally {
-                    expectedStream.close();
-                }
-            } else {
+            URL url = cls.getResource(resourceName);
+            if (url == null) {
                 return null;
+            } else {
+                return new String(
+                        Files.readAllBytes(Paths.get(
+                                url.toURI())),
+                        StandardCharsets.UTF_8);
             }
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static String readFile(String fileName) {
         try {
-            StringBuilder sb = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8))) {
-                String line = reader.readLine();
-                while (line != null) {
-                    sb.append(line).append("\n");
-                    line = reader.readLine();
-                }
-                return sb.toString();
+            URL url = new File(fileName).toURI().toURL();
+            if (url == null) {
+                return null;
+            } else {
+                return new String(
+                        Files.readAllBytes(Paths.get(
+                                url.toURI())),
+                        StandardCharsets.UTF_8);
             }
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
@@ -189,6 +179,21 @@ public final class TestUtils {
         ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
         try {
             return mapper.readValue(url, c);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T fromYamlString(String yamlContent, Class<T> c) {
+        return fromYamlString(yamlContent, c, false);
+    }
+
+    public static <T> T fromYamlString(String yamlContent, Class<T> c, boolean ignoreUnknownProperties) {
+        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
+        try {
+            return mapper.readValue(yamlContent, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {

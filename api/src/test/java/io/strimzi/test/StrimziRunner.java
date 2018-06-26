@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.test.k8s.BaseKubeClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
@@ -40,14 +42,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
-import static io.strimzi.test.k8s.BaseKubeClient.CM;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
  * A test runner which sets up Strimzi resources in a Kubernetes cluster
- * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator}, {@link KafkaCluster})
+ * according to annotations ({@link Namespace}, {@link Resources}, {@link ClusterOperator}, {@link KafkaFromClasspathYaml})
  * on the test class and/or test methods. {@link OpenShiftOnly} can be used to ignore tests when not running on
  * OpenShift (if the thing under test is OpenShift-specific).
  */
@@ -270,21 +271,24 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
+    Class<?> testClass(Annotatable a) {
+        if (a instanceof TestClass) {
+            return ((TestClass) a).getJavaClass();
+        } else if (a instanceof FrameworkMethod) {
+            FrameworkMethod method = (FrameworkMethod) a;
+            return method.getDeclaringClass();
+        } else if (a instanceof FrameworkField) {
+            FrameworkField field = (FrameworkField) a;
+            return field.getDeclaringClass();
+        } else {
+            throw new RuntimeException("Unexpected annotatable element " + a);
+        }
+    }
+
     String getContent(File file, Consumer<JsonNode> edit) {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(file);
-            edit.accept(node);
-            return mapper.writeValueAsString(node);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    <T> String getContent(Class<T> cls, File file, Consumer<T> edit) {
-        YAMLMapper mapper = new YAMLMapper();
-        try {
-            T node = mapper.readValue(file, cls);
             edit.accept(node);
             return mapper.writeValueAsString(node);
         } catch (IOException e) {
@@ -386,54 +390,62 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withKafkaClusters(Annotatable element,
                                     Statement statement) {
         Statement last = statement;
-        for (KafkaCluster cluster : annotations(element, KafkaCluster.class)) {
-            // use the example kafka-ephemeral as a template, but modify it according to the annotation
-            String yaml = getContent(KafkaAssembly.class, new File(KAFKA_PERSISTENT_YAML), node -> {
-                JsonNode metadata = node.get("metadata");
-                ((ObjectNode) metadata).put("name", cluster.name());
-                JsonNode data = node.get("data");
-                ((ObjectNode) data).put("kafka-nodes", String.valueOf(cluster.kafkaNodes()));
-                ((ObjectNode) data).put("zookeeper-nodes", String.valueOf(cluster.zkNodes()));
-                // updates values for ConfigMap
-                for (CmData cmData : cluster.config()) {
-                    ((ObjectNode) data).put(cmData.key(), cmData.value());
-                }
-            });
-            last = new Bracket(last) {
-                private final String kafkaStatefulSetName = cluster.name() + "-kafka";
-                //private final String zkStatefulSetName = cluster.name() + "-zookeeper";
-                private final String tcDeploymentName = cluster.name() + "-topic-operator";
-                @Override
-                protected void before() {
-                    LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", cluster.name(), name(element));
-                    // create cm
-                    kubeClient().createContent(yaml);
-                    try {
-                        // wait for ss
-                        kubeClient().waitForStatefulSet(kafkaStatefulSetName, cluster.kafkaNodes());
-                        // wait for TOs
-                        kubeClient().waitForDeployment(tcDeploymentName);
-                    } catch (TimeoutException e) {
-                        logState(e);
-                    }
-                }
+        KafkaFromClasspathYaml cluster = element.getAnnotation(KafkaFromClasspathYaml.class);
+        if (cluster != null) {
+            String[] resources = cluster.value().length == 0 ? new String[]{classpathResourceName(element)} : cluster.value();
+            for (String resource : resources) {
+                // use the example kafka-ephemeral as a template, but modify it according to the annotation
+                String yaml = TestUtils.readResource(testClass(element), resource);
+                KafkaAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaAssembly.class);
+                last = new Bracket(last) {
+                    private final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
+                    //private final String zkStatefulSetName = cluster.name() + "-zookeeper";
+                    private final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
 
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting kafka cluster '{}' after test per @KafkaCluster annotation on {}", cluster.name(), name(element));
-                    // delete cm
-                    kubeClient().deleteContent(yaml);
-                    // wait for ss to go
-                    try {
-                        kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
-                    } catch (Exception e) {
-                        LOGGER.info("Exception {} while cleaning up. ", e.toString());
-                        onError(e);
+                    @Override
+                    protected void before() {
+                        LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
+                        // create cm
+                        kubeClient().createContent(yaml);
+                        try {
+                            // wait for ss
+                            kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
+                            // wait for TOs
+                            kubeClient().waitForDeployment(tcDeploymentName);
+                        } catch (TimeoutException e) {
+                            logState(e);
+                        }
                     }
-                }
-            };
+
+                    @Override
+                    protected void after() {
+                        LOGGER.info("Deleting kafka cluster '{}' after test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
+                        // delete cm
+                        kubeClient().deleteContent(yaml);
+                        // wait for ss to go
+                        try {
+                            kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
+                        } catch (Exception e) {
+                            LOGGER.info("Exception {} while cleaning up. ", e.toString());
+                            onError(e);
+                        }
+                    }
+                };
+            }
         }
         return last;
+    }
+
+    private String classpathResourceName(Annotatable element) {
+        if (element instanceof TestClass) {
+            return name(element) + ".yaml";
+        } else if (element instanceof FrameworkMethod
+                || element instanceof FrameworkField) {
+            return testClass(element).getSimpleName() + "." + name(element) + ".yaml";
+        } else {
+            throw new RuntimeException("Unexpected annotatable " + element);
+        }
+
     }
 
     private Statement withClusterOperator(Annotatable element,
@@ -636,14 +648,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
                     // create cm
                     kubeClient().createContent(configMap);
-                    kubeClient().waitForResourceCreation(CM, topic.name());
+                    kubeClient().waitForResourceCreation(BaseKubeClient.CM, topic.name());
                 }
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting ConfigMap '{}' after test per @Topic annotation on {}", topic.clusterName(), name(element));
                     // delete cm
                     kubeClient().deleteContent(configMap);
-                    kubeClient().waitForResourceDeletion(CM, topic.name());
+                    kubeClient().waitForResourceDeletion(BaseKubeClient.CM, topic.name());
                 }
             };
         }

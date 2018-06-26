@@ -9,7 +9,7 @@ import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -47,15 +47,7 @@ import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 @RunWith(StrimziRunner.class)
 @Namespace(ConnectClusterIT.NAMESPACE)
 @ClusterOperator
-@KafkaCluster(
-        name = ConnectClusterIT.KAFKA_CLUSTER_NAME,
-        config = {
-                @CmData(key = "kafka-storage",
-                        value = "{ \"type\": \"ephemeral\" }"),
-                @CmData(key = "zookeeper-storage",
-                        value = "{ \"type\": \"ephemeral\" }")
-        }
-)
+@KafkaFromClasspathYaml
 public class ConnectClusterIT extends AbstractClusterIT {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectClusterIT.class);

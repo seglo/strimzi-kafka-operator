@@ -37,7 +37,6 @@
     </properties>
 
     <modules>
-        <module>common-test</module>
         <module>crd-generator</module>
         <module>api</module>
         <module>topic-operator</module>
@@ -53,6 +52,14 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>api</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>api</artifactId>
+                <version>${project.version}</version>
+                <classifier>tests</classifier>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
@@ -154,12 +161,6 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>certificate-manager</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.strimzi</groupId>
-                <artifactId>common-test</artifactId>
-                <version>${project.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

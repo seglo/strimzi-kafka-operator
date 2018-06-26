@@ -14,10 +14,10 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
-      <dependency>
-          <groupId>com.fasterxml.jackson.dataformat</groupId>
-          <artifactId>jackson-dataformat-yaml</artifactId>
-      </dependency>
+    <dependency>
+        <groupId>com.fasterxml.jackson.dataformat</groupId>
+        <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
     <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>kubernetes-client</artifactId>
@@ -30,13 +30,9 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
     </dependency>
-      <dependency>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-      </dependency>
     <dependency>
-      <groupId>io.strimzi</groupId>
-      <artifactId>common-test</artifactId>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
     </dependency>
   </dependencies>
   <build>

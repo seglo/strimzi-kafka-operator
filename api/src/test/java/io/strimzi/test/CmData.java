@@ -9,7 +9,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation is used in ({@link ConnectCluster}, {@link KafkaCluster})
+ * Annotation is used in ({@link ConnectCluster}
  * to configure a cluster with custom parameters and values.
  * <p>
  * An example would be:
@@ -21,9 +21,11 @@ import java.lang.annotation.Target;
  * public void test() {
  * }
  * </pre>
+ * @deprecated This will be removed once Kafka Connect clusters are CRD enabled
  */
 @Target({})
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated
 public @interface CmData {
 
     String key();

@@ -4,22 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.strimzi.test.TestUtils;
 import org.junit.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -40,9 +29,9 @@ public class KafkaAssemblyTest {
 
     protected void assertDesiredResource(KafkaAssembly k, String resource) throws IOException {
         //assertNotNull("The resource " + resourceName + " does not exist", model);
-        String content = ModelTestUtils.readResource(getClass(), resource);
+        String content = TestUtils.readResource(getClass(), resource);
         if (content != null) {
-            String ssStr = ModelTestUtils.toYamlString(k);
+            String ssStr = TestUtils.toYamlString(k);
             assertEquals(content.trim(), ssStr.trim());
         } else {
             fail("The resource " + resource + " does not exist");
@@ -51,7 +40,7 @@ public class KafkaAssemblyTest {
 
     @Test
     public void kafkaRoundTrip() throws IOException {
-        KafkaAssembly model = ModelTestUtils.fromYaml("kafka.yaml", KafkaAssembly.class);
+        KafkaAssembly model = TestUtils.fromYaml("kafka.yaml", KafkaAssembly.class);
         assertEquals(KafkaAssembly.RESOURCE_GROUP + "/" + KafkaAssembly.VERSION, model.getApiVersion());
         assertEquals("Kafka", model.getKind());
 

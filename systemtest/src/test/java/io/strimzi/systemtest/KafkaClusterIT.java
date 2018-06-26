@@ -7,10 +7,9 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.CmData;
 import io.strimzi.test.JUnitGroup;
-import io.strimzi.test.KafkaCluster;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -93,7 +92,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, zkNodes = 1)
+    @KafkaFromClasspathYaml()
     public void testKafkaAndZookeeperScaleUpScaleDown() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 3, 1, false);
         // kafka cluster already deployed via annotation
@@ -149,7 +148,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 1, zkNodes = 1)
+    @KafkaFromClasspathYaml()
     public void testZookeeperScaleUpScaleDown() {
         // kafka cluster already deployed via annotation
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", CLUSTER_NAME);
@@ -206,14 +205,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = "my-cluster", kafkaNodes = 2, zkNodes = 2, config = {
-            @CmData(key = "zookeeper-healthcheck-delay", value = "30"),
-            @CmData(key = "zookeeper-healthcheck-timeout", value = "10"),
-            @CmData(key = "kafka-healthcheck-delay", value = "30"),
-            @CmData(key = "kafka-healthcheck-timeout", value = "10"),
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 1,\"offsets.topic.replication.factor\": 1,\"transaction.state.log.replication.factor\": 1}"),
-            @CmData(key = "zookeeper-config", value = "{\"timeTick\": 2000, \"initLimit\": 5, \"syncLimit\": 2}")
-    })
+    @KafkaFromClasspathYaml()
     public void testCustomAndUpdatedValues() {
         String clusterName = "my-cluster";
         int expectedZKPods = 2;
@@ -299,9 +291,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME, kafkaNodes = 3, config = {
-            @CmData(key = "kafka-config", value = "{\"default.replication.factor\": 3,\"offsets.topic.replication.factor\": 3,\"transaction.state.log.replication.factor\": 3}")
-            })
+    @KafkaFromClasspathYaml()
     @Topic(name = TOPIC_NAME, clusterName = "my-cluster")
     public void testSendMessages() {
         int messagesCount = 20;
@@ -313,28 +303,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     }
 
-    @KafkaCluster(name = "jvm-resource-cluster",
-        kafkaNodes = 1,
-        zkNodes = 1,
-        config = {
-            @CmData(key = "kafka-storage",
-                    value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "kafka-resources",
-                    value = "{ \"limits\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}, " +
-                            "\"requests\": {\"memory\": \"2Gi\", \"cpu\": \"400m\"}}"),
-            @CmData(key = "kafka-jvmOptions",
-                    value = "{\"-Xmx\": \"1g\", \"-Xms\": \"1G\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
-            @CmData(key = "zookeeper-storage",
-                    value = "{ \"type\": \"ephemeral\" }"),
-            @CmData(key = "zookeeper-resources",
-                    value = "{ \"limits\": {\"memory\": \"1G\", \"cpu\": \"300m\"}, " +
-                            "\"requests\": {\"memory\": \"1G\", \"cpu\": \"300m\"} }"),
-            @CmData(key = "zookeeper-jvmOptions",
-                    value = "{\"-Xmx\": \"600m\", \"-Xms\": \"300m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}"),
-            @CmData(key = "topic-operator-config",
-                    value = "{\"resources\": { \"limits\": {\"memory\": \"500M\", \"cpu\": \"300m\"}, " +
-                            "\"requests\": {\"memory\": \"500M\", \"cpu\": \"300m\"} } }")
-    })
+    @KafkaFromClasspathYaml
     @Test
     @JUnitGroup(name = "regression")
     public void testJvmAndResources() {
@@ -356,7 +325,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME)
+    @KafkaFromClasspathYaml
     public void testForTopicOperator() {
         //Createing topics for testing
         kubeClient.create(TOPIC_CM);
@@ -422,13 +391,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @KafkaCluster(name = CLUSTER_NAME,
-            kafkaNodes = 1,
-            zkNodes = 1,
-            config = {
-                    @CmData(key = "kafka-rack",
-                            value = "{\"topologyKey\": \"rack-key\"}")
-            })
+    @KafkaFromClasspathYaml
     public void testRackAware() {
         testDockerImagesForKafkaCluster(CLUSTER_NAME, 1, 1, true);
 

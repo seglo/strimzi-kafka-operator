@@ -12,8 +12,8 @@ spec:
       delay: "15"
       timeout: "5"
     config:
-      offsets.topic.replication.factor: 3,
-      transaction.state.log.replication.factor: 3,
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
     storage:
       type: ephemeral
@@ -38,4 +38,4 @@ spec:
       type: ephemeral
     metrics:
       lowercaseOutputName: true
-  topic-operator-config: { }
+  topicOperator: { }
