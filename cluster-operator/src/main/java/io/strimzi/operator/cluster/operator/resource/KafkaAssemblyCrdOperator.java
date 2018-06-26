@@ -33,7 +33,7 @@ public class KafkaAssemblyCrdOperator extends AbstractResourceOperator<Kubernete
         return client.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
     }
 
-    private CustomResourceDefinition getCustomResourceDefinition() {
+    public static CustomResourceDefinition getCustomResourceDefinition() {
         return new CustomResourceDefinitionBuilder()
                     .withApiVersion(KafkaAssembly.CRD_API_VERSION)
                     .withKind("CustomResourceDefinition")

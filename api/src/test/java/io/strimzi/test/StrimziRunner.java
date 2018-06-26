@@ -335,7 +335,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         for (String pod : ccFirst(kubeClient().list("pod"))) {
             LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
         }
-        for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
+        for (String resourceType : asList("pod", "deployment", "statefulset", "kafka")) {
             for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
                 LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
                         System.lineSeparator(), indent(kubeClient().getResourceAsJson(resourceType, resourceName)));
