@@ -439,9 +439,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private String classpathResourceName(Annotatable element) {
         if (element instanceof TestClass) {
             return name(element) + ".yaml";
-        } else if (element instanceof FrameworkMethod
-                || element instanceof FrameworkField) {
-            return testClass(element).getSimpleName() + "." + name(element) + ".yaml";
+        } else if (element instanceof FrameworkMethod) {
+            return testClass(element).getSimpleName() + "." + ((FrameworkMethod) element).getName() + ".yaml";
+        } else if (element instanceof FrameworkField) {
+            return testClass(element).getSimpleName() + "." + ((FrameworkField) element).getName() + ".yaml";
         } else {
             throw new RuntimeException("Unexpected annotatable " + element);
         }
