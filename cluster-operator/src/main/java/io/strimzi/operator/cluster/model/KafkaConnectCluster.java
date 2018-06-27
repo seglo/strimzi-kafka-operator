@@ -101,6 +101,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * @param cm ConfigMap with cluster configuration
      * @return Kafka Connect cluster instance
      */
+    @Deprecated
     public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
         KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(),
                 cm.getMetadata().getName(),
@@ -127,16 +128,30 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public static KafkaConnectCluster fromCrd(KafkaConnectAssembly crd) {
-        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(crd.getMetadata().getNamespace(),
-                crd.getMetadata().getName(),
-                Labels.fromResource(crd));
-        KafkaConnectAssemblySpec spec = crd.getSpec();
+        return fromSpec(crd.getSpec(),
+                new KafkaConnectCluster(crd.getMetadata().getNamespace(),
+                    crd.getMetadata().getName(),
+                    Labels.fromResource(crd)));
+    }
+
+    /**
+     * Abstracts the calling of setters on a (subclass of) KafkaConnectCluster
+     * from the instantiation of the (subclass of) KafkaConnectCluster,
+     * thus permitting reuse of the setter-calling code for subclasses.
+     */
+    protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectAssemblySpec spec, C kafkaConnect) {
         kafkaConnect.setReplicas(spec.getReplicas());
         kafkaConnect.setImage(spec.getImage());
         kafkaConnect.setResources(spec.getResources());
         kafkaConnect.setJvmOptions(spec.getJvmOptions());
-        kafkaConnect.setHealthCheckInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+        if (spec.getReadinessProbe() != null) {
+            kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
+            kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (spec.getLivenessProbe() != null) {
+            kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
+            kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+        }
         kafkaConnect.setMetricsEnabled(spec.getMetrics() != null);
         if (kafkaConnect.isMetricsEnabled()) {
             kafkaConnect.setMetricsConfig(spec.getMetrics().entrySet());

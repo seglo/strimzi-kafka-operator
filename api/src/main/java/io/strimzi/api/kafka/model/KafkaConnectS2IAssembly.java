@@ -56,7 +56,7 @@ public class KafkaConnectS2IAssembly extends CustomResource {
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
-    private transient KafkaConnectAssemblySpec spec;
+    private transient KafkaConnectS2IAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -86,11 +86,11 @@ public class KafkaConnectS2IAssembly extends CustomResource {
         super.setMetadata(metadata);
     }
 
-    public KafkaConnectAssemblySpec getSpec() {
+    public KafkaConnectS2IAssemblySpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaConnectAssemblySpec spec) {
+    public void setSpec(KafkaConnectS2IAssemblySpec spec) {
         this.spec = spec;
     }
 

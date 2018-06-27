@@ -306,7 +306,13 @@ public class ClusterOperator extends AbstractVerticle {
                         request.response().setStatusCode(200).end();
                     }
                 })
-                .listen(HEALTH_SERVER_PORT);
+                .listen(HEALTH_SERVER_PORT, ar -> {
+                    if (ar.succeeded()) {
+                        log.info("ClusterOperator is now ready (health server listening on {})", HEALTH_SERVER_PORT);
+                    } else {
+                        log.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
+                    }
+                });
     }
 
 }

@@ -4,13 +4,13 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapList;
-import io.fabric8.kubernetes.api.model.DoneableConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaConnectS2IAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
@@ -41,13 +42,14 @@ import java.util.List;
  *     <li>A BuildConfig</li>
  * </ul>
  */
-public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, ConfigMap, ConfigMapList, DoneableConfigMap, Resource<ConfigMap, DoneableConfigMap>> {
+public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly, Resource<KafkaConnectS2IAssembly, DoneableKafkaConnectS2IAssembly>> {
 
     private static final Logger log = LogManager.getLogger(KafkaConnectS2IAssemblyOperator.class.getName());
     private final ServiceOperator serviceOperations;
     private final DeploymentConfigOperator deploymentConfigOperations;
     private final ImageStreamOperator imagesStreamOperations;
     private final BuildConfigOperator buildConfigOperations;
+    private final ConfigMapOperator configMapOperations;
 
     /**
      * @param vertx                      The Vertx instance
@@ -61,13 +63,15 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Ku
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            CertManager certManager,
+                                           KafkaConnectS2IAssemblyCrdOperator connectOperator,
                                            ConfigMapOperator configMapOperations,
                                            DeploymentConfigOperator deploymentConfigOperations,
                                            ServiceOperator serviceOperations,
                                            ImageStreamOperator imagesStreamOperations,
                                            BuildConfigOperator buildConfigOperations,
                                            SecretOperator secretOperations) {
-        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, certManager, configMapOperations, secretOperations);
+        super(vertx, isOpenShift, AssemblyType.CONNECT_S2I, certManager, connectOperator, secretOperations);
+        this.configMapOperations = configMapOperations;
         this.serviceOperations = serviceOperations;
         this.deploymentConfigOperations = deploymentConfigOperations;
         this.imagesStreamOperations = imagesStreamOperations;
@@ -75,12 +79,12 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Ku
     }
 
     @Override
-    public void createOrUpdate(Reconciliation reconciliation, ConfigMap assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
+    public void createOrUpdate(Reconciliation reconciliation, KafkaConnectS2IAssembly assemblyCm, List<Secret> assemblySecrets, Handler<AsyncResult<Void>> handler) {
         String namespace = reconciliation.namespace();
         if (isOpenShift) {
             KafkaConnectS2ICluster connect;
             try {
-                connect = KafkaConnectS2ICluster.fromConfigMap(assemblyCm);
+                connect = KafkaConnectS2ICluster.fromCrd(assemblyCm);
             } catch (Exception e) {
                 handler.handle(Future.failedFuture(e));
                 return;
@@ -89,7 +93,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Ku
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                    .compose(i -> resourceOperator.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
+                    .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))

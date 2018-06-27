@@ -28,6 +28,8 @@ import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
 import io.strimzi.api.kafka.model.Resources;
 import io.vertx.core.json.JsonObject;
 
@@ -84,6 +86,15 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         }
 
         return kafkaConnect;
+    }
+
+    public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly crd) {
+        KafkaConnectS2IAssemblySpec spec = crd.getSpec();
+        KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(crd.getMetadata().getNamespace(),
+                crd.getMetadata().getName(),
+                Labels.fromResource(crd)));
+        cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
+        return cluster;
     }
 
     /**

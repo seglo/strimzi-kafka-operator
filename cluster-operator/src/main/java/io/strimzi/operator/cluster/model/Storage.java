@@ -93,6 +93,7 @@ public class Storage {
      * @param json  storage JSON representation
      * @return  Storage instance
      */
+    @Deprecated
     public static Storage fromJson(JsonObject json) {
 
         String type = json.getString(Storage.TYPE_FIELD);
@@ -137,6 +138,7 @@ public class Storage {
      * @param pvc   PersistentVolumeClaim representation
      * @return  Storage instance
      */
+    @Deprecated
     public static Storage fromPersistentVolumeClaim(PersistentVolumeClaim pvc) {
 
         Storage storage = new Storage(StorageType.PERSISTENT_CLAIM);

@@ -247,12 +247,11 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
      * @param selector The selector
      */
     public final CountDownLatch reconcileAll(String trigger, String namespace, Labels selector) {
-        Labels selectorWithCluster = selectorForCluster(selector);
 
         // get ConfigMaps with kind=cluster&type=kafka (or connect, or connect-s2i) for the corresponding cluster type
-        List<T> cms = resourceOperator.list(namespace, selectorWithCluster);
-        Set<String> cmsNames = cms.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): ConfigMaps with labels {}: {}", assemblyType, trigger, selectorWithCluster, cmsNames);
+        List<T> desiredResources = resourceOperator.list(namespace, selector);
+        Set<String> desiredNames = desiredResources.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toSet());
+        log.debug("reconcileAll({}, {}): desired resources with labels {}: {}", assemblyType, trigger, selector, desiredNames);
 
         // get resources with kind=cluster&type=kafka (or connect, or connect-s2i)
         List<? extends HasMetadata> resources = getResources(namespace);
@@ -261,15 +260,15 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
                 .filter(r -> Labels.kind(r) == null) // exclude Cluster CM, which won't have a cluster label
                 .map(Labels::cluster)
                 .collect(Collectors.toSet());
-        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selectorWithCluster, resourceNames);
+        log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selector, resourceNames);
 
-        cmsNames.addAll(resourceNames);
+        desiredNames.addAll(resourceNames);
 
         // We use a latch so that callers (specifically, test callers) know when the reconciliation is complete
         // Using futures would be more complex for no benefit
-        CountDownLatch latch = new CountDownLatch(cmsNames.size());
+        CountDownLatch latch = new CountDownLatch(desiredNames.size());
 
-        for (String name: cmsNames) {
+        for (String name: desiredNames) {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
             reconcileAssembly(reconciliation, result -> {
                 if (result.succeeded()) {
@@ -287,16 +286,6 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
         }
 
         return latch;
-    }
-
-    /**
-     * @deprecated This is only needed during the transition to CRDs
-     * @param selector
-     * @return
-     */
-    @Deprecated
-    protected Labels selectorForCluster(Labels selector) {
-        return selector.withType(assemblyType);
     }
 
     /**
