@@ -6,23 +6,24 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.fabric8.openshift.client.OpenShiftClient;
-
+import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
+import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -30,7 +31,6 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,6 +40,10 @@ import java.util.Map;
 
 public class Main {
     private static final Logger log = LogManager.getLogger(Main.class.getName());
+
+    static {
+        KubernetesDeserializer.registerCustomKind(KafkaAssembly.RESOURCE_KIND, KafkaAssembly.class);
+    }
 
     public static void main(String[] args) {
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
