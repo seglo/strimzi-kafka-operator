@@ -399,6 +399,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 KafkaAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaAssembly.class);
                 last = new Bracket(last) {
                     private final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
+                    private final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
                     //private final String zkStatefulSetName = cluster.name() + "-zookeeper";
                     private final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
 
@@ -409,8 +410,13 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         kubeClient().createContent(yaml);
                         try {
                             // wait for ss
+                            LOGGER.info("Waiting for Zookeeper SS");
+                            kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
+                            // wait for ss
+                            LOGGER.info("Waiting for Kafka SS");
                             kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
                             // wait for TOs
+                            LOGGER.info("Waiting for TC Deployment");
                             kubeClient().waitForDeployment(tcDeploymentName);
                         } catch (TimeoutException e) {
                             logState(e);
