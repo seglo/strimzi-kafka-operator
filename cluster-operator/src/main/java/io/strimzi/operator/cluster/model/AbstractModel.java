@@ -87,9 +87,12 @@ public abstract class AbstractModel {
     // Number of replicas
     protected int replicas;
 
-    protected String healthCheckPath;
-    protected int healthCheckTimeout;
-    protected int healthCheckInitialDelay;
+    protected String readinessPath;
+    protected int readinessTimeout;
+    protected int readinessInitialDelay;
+    protected String livenessPath;
+    protected int livenessTimeout;
+    protected int livenessInitialDelay;
 
     protected String headlessName;
     protected String name;
@@ -142,12 +145,40 @@ public abstract class AbstractModel {
         this.image = image;
     }
 
+    /**
+     * Use explicit liveness and readiness setters
+     * @param healthCheckTimeout
+     */
+    @Deprecated
     protected void setHealthCheckTimeout(int healthCheckTimeout) {
-        this.healthCheckTimeout = healthCheckTimeout;
+        this.readinessTimeout = healthCheckTimeout;
+        this.livenessTimeout = healthCheckTimeout;
     }
 
+    /**
+     * Use explicit liveness and readiness setters
+     * @param healthCheckInitialDelay
+     */
+    @Deprecated
     protected void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
-        this.healthCheckInitialDelay = healthCheckInitialDelay;
+        this.readinessInitialDelay = healthCheckInitialDelay;
+        this.livenessInitialDelay = healthCheckInitialDelay;
+    }
+
+    protected void setReadinessTimeout(int readinessTimeout) {
+        this.readinessTimeout = readinessTimeout;
+    }
+
+    protected void setReadinessInitialDelay(int readinessInitialDelay) {
+        this.readinessInitialDelay = readinessInitialDelay;
+    }
+
+    protected void setLivenessTimeout(int livenessTimeout) {
+        this.livenessTimeout = livenessTimeout;
+    }
+
+    protected void setLivenessInitialDelay(int livenessInitialDelay) {
+        this.livenessInitialDelay = livenessInitialDelay;
     }
 
     /**

@@ -26,12 +26,15 @@ import java.util.Map;
         "affinity", "metrics"})
 public class Zookeeper extends AbstractSsLike {
     public static final String FORBIDDEN_PREFIXES = "server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme";
-
+    public static final String DEFAULT_IMAGE =
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
+    public static final int DEFAULT_REPLICAS = 3;
     private Map<String, Object> config = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Zookeeper() {
-        this.image = "strimzi/kafka:latest";
+        this.image = DEFAULT_IMAGE;
+        this.replicas = DEFAULT_REPLICAS;
     }
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)

@@ -24,7 +24,6 @@ import java.util.Map;
 )
 public class Probe {
     private int initialDelaySeconds = 15;
-
     private int timeoutSeconds = 5;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

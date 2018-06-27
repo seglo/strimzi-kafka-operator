@@ -72,9 +72,12 @@ public class KafkaConnectCluster extends AbstractModel {
         this.metricsConfigName = metricsConfigName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessPath = "/";
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/";
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
@@ -214,8 +217,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
         return createDeployment(
                 getContainerPortList(),
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
-                createHttpProbe(healthCheckPath, REST_API_PORT_NAME, healthCheckInitialDelay, healthCheckTimeout),
+                createHttpProbe(livenessPath, REST_API_PORT_NAME, livenessInitialDelay, livenessTimeout),
+                createHttpProbe(readinessPath, REST_API_PORT_NAME, readinessInitialDelay, readinessTimeout),
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

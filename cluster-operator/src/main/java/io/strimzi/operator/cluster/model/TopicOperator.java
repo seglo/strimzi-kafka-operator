@@ -69,9 +69,12 @@ public class TopicOperator extends AbstractModel {
         this.name = topicOperatorName(cluster);
         this.image = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE;
         this.replicas = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS;
-        this.healthCheckPath = "/";
-        this.healthCheckTimeout = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessPath = "/";
+        this.readinessTimeout = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/";
+        this.livenessTimeout = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY;
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
@@ -164,6 +167,7 @@ public class TopicOperator extends AbstractModel {
      * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic operator one
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
+    @Deprecated
     public static TopicOperator fromConfigMap(ConfigMap kafkaClusterCm) {
         TopicOperator topicOperator = null;
 
@@ -254,8 +258,8 @@ public class TopicOperator extends AbstractModel {
 
         return createDeployment(
                 Collections.singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")),
-                createHttpProbe(healthCheckPath + "healthy", HEALTHCHECK_PORT_NAME, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT),
-                createHttpProbe(healthCheckPath + "ready", HEALTHCHECK_PORT_NAME, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT),
+                createHttpProbe(livenessPath + "healthy", HEALTHCHECK_PORT_NAME, livenessInitialDelay, livenessTimeout),
+                createHttpProbe(readinessPath + "ready", HEALTHCHECK_PORT_NAME, readinessInitialDelay, readinessTimeout),
                 updateStrategy,
                 Collections.emptyMap(),
                 Collections.emptyMap(),

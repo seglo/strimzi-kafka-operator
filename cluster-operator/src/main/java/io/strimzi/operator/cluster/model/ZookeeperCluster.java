@@ -48,9 +48,7 @@ public class ZookeeperCluster extends AbstractModel {
     // N/A
 
     // Configuration defaults
-    private static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_ZOOKEEPER_IMAGE", "strimzi/zookeeper:latest");
-    private static final int DEFAULT_REPLICAS = 3;
+
     private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
@@ -104,11 +102,14 @@ public class ZookeeperCluster extends AbstractModel {
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.metricsConfigName = zookeeperMetricsName(cluster);
-        this.image = DEFAULT_IMAGE;
-        this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.image = Zookeeper.DEFAULT_IMAGE;
+        this.replicas = Zookeeper.DEFAULT_REPLICAS;
+        this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
@@ -123,13 +124,14 @@ public class ZookeeperCluster extends AbstractModel {
      * @param kafkaClusterCm ConfigMap with cluster configuration
      * @return Zookeeper cluster instance
      */
+    @Deprecated
     public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
                 Labels.fromResource(kafkaClusterCm));
 
         Map<String, String> data = kafkaClusterCm.getData();
-        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
+        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, Zookeeper.DEFAULT_REPLICAS));
+        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, Zookeeper.DEFAULT_IMAGE));
         zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
         zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
 
@@ -156,10 +158,13 @@ public class ZookeeperCluster extends AbstractModel {
         Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
         zk.setReplicas(zookeeper.getReplicas());
         zk.setImage(zookeeper.getImage());
-        // TODO split readiness and liveness checks
         if (zookeeper.getReadinessProbe() != null) {
-            zk.setHealthCheckInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
-            zk.setHealthCheckTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
+            zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
+            zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (zookeeper.getLivenessProbe() != null) {
+            zk.setLivenessInitialDelay(zookeeper.getLivenessProbe().getInitialDelaySeconds());
+            zk.setLivenessTimeout(zookeeper.getLivenessProbe().getTimeoutSeconds());
         }
         if (zookeeper.getMetrics() != null) {
             zk.setMetricsEnabled(true);
@@ -239,8 +244,8 @@ public class ZookeeperCluster extends AbstractModel {
                 getVolumes(),
                 getVolumeClaims(),
                 getVolumeMounts(),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout),
+                createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout),
                 resources(),
                 getMergedAffinity(),
                 getInitContainers(),

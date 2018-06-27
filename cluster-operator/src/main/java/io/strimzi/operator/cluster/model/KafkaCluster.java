@@ -126,9 +126,12 @@ public class KafkaCluster extends AbstractModel {
         this.metricsConfigName = metricConfigsName(cluster);
         this.image = Kafka.DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
-        this.healthCheckPath = "/opt/kafka/kafka_healthcheck.sh";
-        this.healthCheckTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
-        this.healthCheckInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.readinessPath = "/opt/kafka/kafka_healthcheck.sh";
+        this.livenessPath = this.readinessPath;
+        this.readinessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.readinessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
+        this.livenessTimeout = DEFAULT_HEALTHCHECK_TIMEOUT;
+        this.livenessInitialDelay = DEFAULT_HEALTHCHECK_DELAY;
         this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
@@ -225,10 +228,13 @@ public class KafkaCluster extends AbstractModel {
         Kafka kafka = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafka.getReplicas());
         result.setImage(kafka.getImage());
-        // TODO split readiness and liveness checks
         if (kafka.getReadinessProbe() != null) {
-            result.setHealthCheckInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
-            result.setHealthCheckTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
+            result.setReadinessInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
+            result.setReadinessTimeout(kafka.getReadinessProbe().getTimeoutSeconds());
+        }
+        if (kafka.getLivenessProbe() != null) {
+            result.setLivenessInitialDelay(kafka.getLivenessProbe().getInitialDelaySeconds());
+            result.setLivenessTimeout(kafka.getLivenessProbe().getTimeoutSeconds());
         }
         result.setRackConfig(kafka.getRackConfig());
         result.setInitImage(kafka.getBrokerRackInitImage());
@@ -506,8 +512,8 @@ public class KafkaCluster extends AbstractModel {
                 getVolumes(),
                 getVolumeClaims(),
                 getVolumeMounts(),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
-                createExecProbe(healthCheckPath, healthCheckInitialDelay, healthCheckTimeout),
+                createExecProbe(livenessPath, livenessInitialDelay, livenessTimeout),
+                createExecProbe(readinessPath, readinessInitialDelay, readinessTimeout),
                 resources(),
                 getMergedAffinity(),
                 getInitContainers(),
