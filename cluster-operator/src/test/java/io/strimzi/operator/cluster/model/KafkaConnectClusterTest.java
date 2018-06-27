@@ -92,8 +92,10 @@ public class KafkaConnectClusterTest {
 
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, kc.image);
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, kc.replicas);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.healthCheckInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.healthCheckTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.readinessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.readinessTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, kc.livenessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, kc.livenessTimeout);
         assertEquals(defaultConfiguration, kc.getConfiguration().getConfiguration());
     }
 
@@ -101,8 +103,10 @@ public class KafkaConnectClusterTest {
     public void testFromConfigMap() {
         assertEquals(replicas, kc.replicas);
         assertEquals(image, kc.image);
-        assertEquals(healthDelay, kc.healthCheckInitialDelay);
-        assertEquals(healthTimeout, kc.healthCheckTimeout);
+        assertEquals(healthDelay, kc.readinessInitialDelay);
+        assertEquals(healthTimeout, kc.readinessTimeout);
+        assertEquals(healthDelay, kc.livenessInitialDelay);
+        assertEquals(healthTimeout, kc.livenessTimeout);
         assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
     }
 
@@ -112,8 +116,10 @@ public class KafkaConnectClusterTest {
 
         assertEquals(replicas, newKc.replicas);
         assertEquals(image, newKc.image);
-        assertEquals(healthDelay, newKc.healthCheckInitialDelay);
-        assertEquals(healthTimeout, newKc.healthCheckTimeout);
+        assertEquals(healthDelay, newKc.readinessInitialDelay);
+        assertEquals(healthTimeout, newKc.readinessTimeout);
+        assertEquals(healthDelay, newKc.livenessInitialDelay);
+        assertEquals(healthTimeout, newKc.livenessTimeout);
         assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
     }
 
@@ -124,8 +130,10 @@ public class KafkaConnectClusterTest {
 
         assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, newKc.replicas);
         assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, newKc.image);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.healthCheckInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.healthCheckTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.readinessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.readinessTimeout);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.livenessInitialDelay);
+        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.livenessTimeout);
         assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
     }
 

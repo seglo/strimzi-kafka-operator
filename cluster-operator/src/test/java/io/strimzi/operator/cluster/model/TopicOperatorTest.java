@@ -96,8 +96,10 @@ public class TopicOperatorTest {
         Assert.assertEquals(cluster, tc.cluster);
         assertEquals(tcImage, tc.image);
         assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS, tc.replicas);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.healthCheckInitialDelay);
-        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.healthCheckTimeout);
+        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.readinessInitialDelay);
+        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.readinessTimeout);
+        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_DELAY, tc.livenessInitialDelay);
+        assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_HEALTHCHECK_TIMEOUT, tc.livenessTimeout);
         assertEquals(tcImage, tc.getImage());
         assertEquals(tcWatchedNamespace, tc.getWatchedNamespace());
         Assert.assertEquals(tcReconciliationInterval, tc.getReconciliationIntervalMs());
@@ -117,8 +119,10 @@ public class TopicOperatorTest {
         Assert.assertEquals(tc.cluster, tcFromDep.cluster);
         assertEquals(tc.image, tcFromDep.image);
         Assert.assertEquals(tc.replicas, tcFromDep.replicas);
-        Assert.assertEquals(tc.healthCheckInitialDelay, tcFromDep.healthCheckInitialDelay);
-        Assert.assertEquals(tc.healthCheckTimeout, tcFromDep.healthCheckTimeout);
+        Assert.assertEquals(tc.readinessInitialDelay, tcFromDep.readinessInitialDelay);
+        Assert.assertEquals(tc.readinessTimeout, tcFromDep.readinessTimeout);
+        Assert.assertEquals(tc.livenessInitialDelay, tcFromDep.livenessInitialDelay);
+        Assert.assertEquals(tc.livenessTimeout, tcFromDep.livenessTimeout);
         assertEquals(tc.getImage(), tcFromDep.getImage());
         assertEquals(tc.getWatchedNamespace(), tcFromDep.getWatchedNamespace());
         Assert.assertEquals(tc.getReconciliationIntervalMs(), tcFromDep.getReconciliationIntervalMs());
