@@ -9,10 +9,9 @@ package io.strimzi.api.kafka.model;
  *
  * 1. we get a correct tree of POJOs when reading a JSON/YAML `Kafka` resource.
  */
-public class KafkaAssemblyTest extends AbstractCrdTest {
+public class KafkaConnectAssemblyTest extends AbstractCrdTest {
 
-    public KafkaAssemblyTest() {
-        super(KafkaAssembly.class);
+    public KafkaConnectAssemblyTest() {
+        super(KafkaConnectAssembly.class);
     }
-
 }

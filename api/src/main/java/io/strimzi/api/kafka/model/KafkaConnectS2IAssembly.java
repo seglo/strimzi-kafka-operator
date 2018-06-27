@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,22 +22,19 @@ import io.sundr.builder.annotations.Buildable;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * A description of a Kafka assembly, as exposed by the Strimzi Kafka CRD.
- */
 @JsonDeserialize(
         using = JsonDeserializer.None.class
 )
 @Crd(
-        apiVersion = KafkaAssembly.CRD_API_VERSION,
+        apiVersion = KafkaConnectS2IAssembly.CRD_API_VERSION,
         spec = @Crd.Spec(
                 names = @Crd.Spec.Names(
-                        kind = KafkaAssembly.RESOURCE_KIND,
-                        plural = KafkaAssembly.RESOURCE_PLURAL
+                        kind = KafkaConnectS2IAssembly.RESOURCE_KIND,
+                        plural = KafkaConnectS2IAssembly.RESOURCE_PLURAL
                 ),
-                group = KafkaAssembly.RESOURCE_GROUP,
+                group = KafkaConnectS2IAssembly.RESOURCE_GROUP,
                 scope = "Namespaced",
-                version = KafkaAssembly.VERSION
+                version = KafkaConnectS2IAssembly.VERSION
         )
 )
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec"})
@@ -45,22 +43,20 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public class KafkaAssembly extends CustomResource {
-
+public class KafkaConnectS2IAssembly extends CustomResource {
     private static final long serialVersionUID = 1L;
     public static final String VERSION = "v1alpha1";
-    public static final String RESOURCE_KIND = "Kafka";
+    public static final String RESOURCE_KIND = "KafkaConnectS2I";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
-    public static final String RESOURCE_PLURAL = "kafkas";
-    public static final String RESOURCE_SINGULAR = "kafka";
+    public static final String RESOURCE_PLURAL = "kafkaconnects2is";
+    public static final String RESOURCE_SINGULAR = "kafkaconnects2i";
     public static final String RESOURCE_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
-    private ObjectMeta metadata;
-    private transient KafkaAssemblySpec spec;
+    private transient KafkaConnectAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
@@ -79,6 +75,7 @@ public class KafkaAssembly extends CustomResource {
         return RESOURCE_KIND;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
     public ObjectMeta getMetadata() {
         return super.getMetadata();
@@ -89,11 +86,11 @@ public class KafkaAssembly extends CustomResource {
         super.setMetadata(metadata);
     }
 
-    public KafkaAssemblySpec getSpec() {
+    public KafkaConnectAssemblySpec getSpec() {
         return spec;
     }
 
-    public void setSpec(KafkaAssemblySpec spec) {
+    public void setSpec(KafkaConnectAssemblySpec spec) {
         this.spec = spec;
     }
 

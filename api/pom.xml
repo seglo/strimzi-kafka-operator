@@ -101,6 +101,8 @@
                                 <argument>io.strimzi.crdgenerator.CrdGenerator</argument>
                                 <argument>--yaml</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaAssembly=${pom.basedir}/../examples/install/cluster-operator/07-crd-kafka.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=${pom.basedir}/../examples/install/cluster-operator/07-crd-kafka-connect.yaml</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=${pom.basedir}/../examples/install/cluster-operator/07-crd-kafka-connect_s2i.yaml</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -120,6 +122,8 @@
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
                                 <argument>https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaAssembly=appendix_kafka_crd.adoc</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=appendix_kafka_connect_crd.adoc</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=appendix_kafka_connect_s2i__crd.adoc</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}/../documentation/book</workingDirectory>
                         </configuration>

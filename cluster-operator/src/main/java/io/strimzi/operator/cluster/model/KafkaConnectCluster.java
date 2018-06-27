@@ -19,6 +19,8 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Resources;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -121,6 +123,26 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
         kafkaConnect.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
 
+        return kafkaConnect;
+    }
+
+    public static KafkaConnectCluster fromCrd(KafkaConnectAssembly crd) {
+        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(crd.getMetadata().getNamespace(),
+                crd.getMetadata().getName(),
+                Labels.fromResource(crd));
+        KafkaConnectAssemblySpec spec = crd.getSpec();
+        kafkaConnect.setReplicas(spec.getReplicas());
+        kafkaConnect.setImage(spec.getImage());
+        kafkaConnect.setResources(spec.getResources());
+        kafkaConnect.setJvmOptions(spec.getJvmOptions());
+        kafkaConnect.setHealthCheckInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
+        kafkaConnect.setHealthCheckTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+        kafkaConnect.setMetricsEnabled(spec.getMetrics() != null);
+        if (kafkaConnect.isMetricsEnabled()) {
+            kafkaConnect.setMetricsConfig(spec.getMetrics().entrySet());
+        }
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
+        kafkaConnect.setUserAffinity(spec.getAffinity());
         return kafkaConnect;
     }
 

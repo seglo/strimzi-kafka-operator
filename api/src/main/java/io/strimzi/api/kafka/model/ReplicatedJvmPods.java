@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.Affinity;
@@ -22,7 +24,7 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public abstract class AbstractSsLike {
+public abstract class ReplicatedJvmPods {
 
     protected int replicas;
 
@@ -38,9 +40,9 @@ public abstract class AbstractSsLike {
 
     protected Map<String, Object> metrics = new HashMap<>(0);
 
-    protected Storage storage;
-
     protected Affinity affinity;
+
+    private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The number of pods in the cluster.")
     @Minimum(1)
@@ -114,16 +116,6 @@ public abstract class AbstractSsLike {
         this.metrics = metrics;
     }
 
-    @Description("Storage configuration (disk). Cannot be updated.")
-    @JsonProperty(required = true)
-    public Storage getStorage() {
-        return storage;
-    }
-
-    public void setStorage(Storage storage) {
-        this.storage = storage;
-    }
-
     @Description("Pod affinity rules.")
     @KubeLink(group = "core", version = "v1", kind = "affinity")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -133,5 +125,15 @@ public abstract class AbstractSsLike {
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalProperties() {
+        return this.additionalProperties;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalProperty(String name, Object value) {
+        this.additionalProperties.put(name, value);
     }
 }

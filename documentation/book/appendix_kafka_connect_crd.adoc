@@ -1,0 +1,117 @@
+[[kafka.strimzi.io-v1alpha1-kind-KafkaConnect]]
+[[kafka.strimzi.io-v1alpha1-type-KafkaConnectAssembly]]
+### `KafkaConnect` v1alpha1 kafka.strimzi.io
+
+
+[options="header"]
+|====
+|Field                        |Description
+|spec                  1.2+<.<|
+|<<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec]]
+### `KafkaConnectAssemblySpec` v1alpha1 kafka.strimzi.io
+
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssembly,`KafkaConnectAssembly`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|replicas              1.2+<.<|
+|integer
+|image                 1.2+<.<|The docker image for the pods.
+|string
+|livenessProbe         1.2+<.<|Pod liveness checking.
+|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|readinessProbe        1.2+<.<|Pod readiness checking.
+|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|jvmOptions            1.2+<.<|JVM Options for pods
+|<<kafka.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
+|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|additionalProperties  1.2+<.<|
+|map
+|config                1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
+|map
+|resources             1.2+<.<|Resource constraints (limits and requests).
+|<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|====
+
+[[kafka.strimzi.io-v1alpha1-type-Probe]]
+### `Probe` v1alpha1 kafka.strimzi.io
+
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|initialDelaySeconds   1.2+<.<|The initial delay before first the health is first checked.
+|integer
+|timeoutSeconds        1.2+<.<|The timeout for each attempted health check.
+|integer
+|====
+
+[[kafka.strimzi.io-v1alpha1-type-JvmOptions]]
+### `JvmOptions` v1alpha1 kafka.strimzi.io
+
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field           |Description
+|-XX      1.2+<.<|A map of -XX options to the JVM
+|map
+|-Xms     1.2+<.<|-Xms option to to the JVM
+|string
+|-Xmx     1.2+<.<|-Xmx option to to the JVM
+|string
+|-server  1.2+<.<|-server option to to the JVM
+|boolean
+|====
+
+[[kafka.strimzi.io-v1alpha1-type-Resources]]
+### `Resources` v1alpha1 kafka.strimzi.io
+
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|limits                1.2+<.<|Resource limits applied at runtime.
+|<<kafka.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|requests              1.2+<.<|Resource requests applied during pod scheduling.
+|<<kafka.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|====
+
+[[kafka.strimzi.io-v1alpha1-type-CpuMemory]]
+### `CpuMemory` v1alpha1 kafka.strimzi.io
+
+Used in: <<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|additionalProperties  1.2+<.<|
+|map
+|cpu                   1.2+<.<|CPU
+|string
+|memory                1.2+<.<|Memory
+|string
+|====
+

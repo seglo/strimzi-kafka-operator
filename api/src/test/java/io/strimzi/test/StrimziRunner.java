@@ -12,6 +12,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.test.k8s.BaseKubeClient;
 import io.strimzi.test.k8s.KubeClient;
+import io.strimzi.test.k8s.KubeClusterException;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.Minishift;
 import io.strimzi.test.k8s.OpenShift;
@@ -336,9 +337,13 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
         }
         for (String resourceType : asList("pod", "deployment", "statefulset", "kafka")) {
-            for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
-                LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                        System.lineSeparator(), indent(kubeClient().getResourceAsJson(resourceType, resourceName)));
+            try {
+                for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
+                    LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
+                            System.lineSeparator(), indent(kubeClient().getResourceAsJson(resourceType, resourceName)));
+                }
+            } catch (KubeClusterException e) {
+                t.addSuppressed(e);
             }
         }
 

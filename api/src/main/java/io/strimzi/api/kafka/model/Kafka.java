@@ -4,8 +4,6 @@
  */
 package io.strimzi.api.kafka.model;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -24,7 +22,7 @@ import java.util.Map;
 )
 @JsonPropertyOrder({ "replicas", "image", "storage", "rackConfig", "brokerRackInitImage",
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
-public class Kafka extends AbstractSsLike {
+public class Kafka extends ReplicatedJvmPods {
 
     public static final String DEFAULT_IMAGE =
             System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka:latest");
@@ -34,12 +32,14 @@ public class Kafka extends AbstractSsLike {
             + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, authorizer., super.user";
 
+    protected Storage storage;
+
     private Map<String, Object> config = new HashMap<>(0);
 
     private String brokerRackInitImage = DEFAULT_INIT_IMAGE;
 
     private RackConfig rackConfig;
-    private Map<String, Object> additionalProperties = new HashMap<>(0);
+
 
     public Kafka() {
         this.image = DEFAULT_IMAGE;
@@ -73,13 +73,13 @@ public class Kafka extends AbstractSsLike {
         this.rackConfig = rackConfig;
     }
 
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProperties;
+    @Description("Storage configuration (disk). Cannot be updated.")
+    @JsonProperty(required = true)
+    public Storage getStorage() {
+        return storage;
     }
 
-    @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) {
-        this.additionalProperties.put(name, value);
+    public void setStorage(Storage storage) {
+        this.storage = storage;
     }
 }

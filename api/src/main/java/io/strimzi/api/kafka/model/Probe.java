@@ -27,6 +27,14 @@ public class Probe {
     private int timeoutSeconds = 5;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    public Probe() {
+    }
+
+    public Probe(int initialDelaySeconds, int timeoutSeconds) {
+        this.initialDelaySeconds = initialDelaySeconds;
+        this.timeoutSeconds = timeoutSeconds;
+    }
+
     @Description("The initial delay before first the health is first checked.")
     @Minimum(0)
     @DefaultValue("15")

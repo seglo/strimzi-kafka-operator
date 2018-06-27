@@ -114,10 +114,10 @@ public class StrimziRunnerTest {
     @Test
     public void test2() {
         Assume.assumeTrue(System.getenv(StrimziRunner.NOTEARDOWN) == null);
-        for (String resourceType : asList("pod", "deployment", "statefulset", "cm")) {
+        for (String resourceType : asList("pod", "deployment", "statefulset", "kafka")) {
             Mockito.when(MOCK_KUBE_CLIENT.list(resourceType)).thenReturn(asList(resourceType + "1", resourceType + "2"));
-            Mockito.when(MOCK_KUBE_CLIENT.describe(resourceType, resourceType + "1")).thenReturn("Blah\nblah,\n" + resourceType + "1");
-            Mockito.when(MOCK_KUBE_CLIENT.describe(resourceType, resourceType + "2")).thenReturn("Blah\nblah,\n" + resourceType + "2");
+            Mockito.when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "1")).thenReturn("Blah\nblah,\n" + resourceType + "1");
+            Mockito.when(MOCK_KUBE_CLIENT.getResourceAsJson(resourceType, resourceType + "2")).thenReturn("Blah\nblah,\n" + resourceType + "2");
         }
         Mockito.when(MOCK_KUBE_CLIENT.logs("pod1")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n1");
         Mockito.when(MOCK_KUBE_CLIENT.logs("pod2")).thenReturn("these\nare\nthe\nlogs\nfrom\npod\n2");
