@@ -11,12 +11,18 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.AbstractResourceOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -30,6 +36,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -53,9 +62,9 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
+    protected final String kind;
     protected final AssemblyType assemblyType;
-
-    protected final AbstractResourceOperator<C, T, L, D, R> resourceOperator;
+    protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
 
@@ -67,9 +76,8 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
      * @param secretOperations For operating on Secrets
      */
     protected AbstractAssemblyOperator(Vertx vertx, boolean isOpenShift, AssemblyType assemblyType,
-
                                        CertManager certManager,
-                                       AbstractResourceOperator<C, T, L, D, R> resourceOperator, SecretOperator secretOperations) {
+                                       AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator, SecretOperator secretOperations) {
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
@@ -295,5 +303,90 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
      * @return The matching resources.
      */
     protected abstract List<HasMetadata> getResources(String namespace);
+
+    void createWatch(String namespace,
+                     Function<T, AssemblyType> fn2,
+                     BiFunction<T, AssemblyType, AbstractAssemblyOperator<?, ?, ?, ?, ?>> fn3,
+                     Supplier<Void> recreate,
+                     Handler<AsyncResult<Watch>> handler) {
+        Labels selector = null;
+        vertx.executeBlocking(
+            future -> {
+                Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
+                    @Override
+                    public void eventReceived(Action action, T cm) {
+
+
+
+                        String name = cm.getMetadata().getName();
+                        switch (action) {
+                            case ADDED:
+                            case DELETED:
+                            case MODIFIED:
+                                Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
+                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
+                                AbstractAssemblyOperator.this.reconcileAssembly(reconciliation, result -> {
+                                    if (result.succeeded()) {
+                                        log.info("{}: Assembly reconciled", reconciliation);
+                                    } else {
+                                        Throwable cause = result.cause();
+                                        if (cause instanceof InvalidConfigMapException) {
+                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+                                        } else {
+                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+                                        }
+                                    }
+                                });
+                                break;
+                            case ERROR:
+                                log.error("Failed {} {} in namespace{} ", kind, name, namespace);
+                                reconcileAll("watch error", namespace, selector);
+                                break;
+                            default:
+                                log.error("Unknown action: {} in namespace {}", name, namespace);
+                                reconcileAll("watch unknown", namespace, selector);
+                        }
+                    }
+
+                    @Override
+                    public void onClose(KubernetesClientException e) {
+                        if (e != null) {
+                            log.error("Watcher closed with exception in namespace {}", namespace, e);
+                            recreate.get();
+                        } else {
+                            log.info("Watcher closed in namespace {}", namespace);
+                        }
+                    }
+                });
+                future.complete(watch);
+            }, res -> {
+                if (res.succeeded())    {
+                    log.info("{} watcher running for labels {}", kind, selector);
+                    handler.handle(Future.succeededFuture((Watch) res.result()));
+                } else {
+                    log.info("{} watcher failed to start", kind, res.cause());
+                    handler.handle(Future.failedFuture(kind + " watcher failed to start"));
+                }
+            }
+        );
+    }
+
+    private void recreateKafkaWatch() {
+        createKafkaWatch(recreateWatchHandler());
+    }
+
+    private Handler<AsyncResult<Watch>> recreateWatchHandler() {
+        return res -> {
+            if (res.succeeded())    {
+                log.info("{} watch recreated in namespace {}", kind, namespace);
+                watchByKind.put(kind, res.result());
+            } else {
+                log.error("Failed to recreate {} watch in namespace {}", kind, namespace);
+                // We failed to recreate the Watch. We cannot continue without it. Lets close Vert.x and exit.
+                vertx.close();
+            }
+        };
+    }
+
 
 }

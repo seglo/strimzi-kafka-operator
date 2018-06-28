@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.vertx.core.Vertx;
 
 public class KafkaConnectS2IAssemblyCrdOperator
-        extends AbstractResourceOperator<OpenShiftClient,
+        extends AbstractWatchableResourceOperator<OpenShiftClient,
             KafkaConnectS2IAssembly,
             KafkaConnectS2IAssemblyList,
             DoneableKafkaConnectS2IAssembly,

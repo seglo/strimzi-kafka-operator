@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.vertx.core.Vertx;
 
-public class KafkaAssemblyCrdOperator extends AbstractResourceOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> {
+public class KafkaAssemblyCrdOperator extends AbstractWatchableResourceOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly, Resource<KafkaAssembly, DoneableKafkaAssembly>> {
     /**
      * Constructor
      * @param vertx The Vertx instance
