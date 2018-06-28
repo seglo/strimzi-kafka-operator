@@ -598,7 +598,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private Resource<KafkaAssembly, DoneableKafkaAssembly> kafkaAssembly(String namespace, String name) {
-        CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(KafkaAssembly.RESOURCE_NAME).get();
+        CustomResourceDefinition crd = mockClient.customResourceDefinitions().withName(KafkaAssembly.CRD_NAME).get();
         return mockClient.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
                 .inNamespace(namespace).withName(name);
     }

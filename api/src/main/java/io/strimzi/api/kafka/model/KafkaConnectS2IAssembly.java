@@ -51,7 +51,6 @@ public class KafkaConnectS2IAssembly extends CustomResource {
     public static final String RESOURCE_GROUP = "kafka.strimzi.io";
     public static final String RESOURCE_PLURAL = "kafkaconnects2is";
     public static final String RESOURCE_SINGULAR = "kafkaconnects2i";
-    public static final String RESOURCE_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
     public static final String CRD_API_VERSION = "apiextensions.k8s.io/v1beta1";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 

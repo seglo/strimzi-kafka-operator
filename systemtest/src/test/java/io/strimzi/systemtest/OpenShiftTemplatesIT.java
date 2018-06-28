@@ -53,7 +53,7 @@ public class OpenShiftTemplatesIT {
     private KubernetesClient client = new DefaultKubernetesClient();
 
     private KafkaAssembly getKafkaWithName(String clusterName) {
-        CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaAssembly.RESOURCE_NAME).get();
+        CustomResourceDefinition crd = client.customResourceDefinitions().withName(KafkaAssembly.CRD_NAME).get();
         KafkaAssembly kafka = client.customResources(crd, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class).inNamespace(NAMESPACE).withName(clusterName).get();
         return kafka;
     }
