@@ -8,21 +8,18 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.SecretCertProvider;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.Watchable;
+import io.strimzi.certs.CertManager;
+import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.operator.resource.AbstractResourceOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.AbstractWatchableResourceOperator;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -36,9 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -62,11 +57,11 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
 
     protected final Vertx vertx;
     protected final boolean isOpenShift;
-    protected final String kind;
     protected final AssemblyType assemblyType;
     protected final AbstractWatchableResourceOperator<C, T, L, D, R> resourceOperator;
     protected final SecretOperator secretOperations;
     protected final CertManager certManager;
+    private final String kind;
 
     /**
      * @param vertx The Vertx instance
@@ -81,6 +76,7 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
         this.vertx = vertx;
         this.isOpenShift = isOpenShift;
         this.assemblyType = assemblyType;
+        this.kind = assemblyType.name;
         this.resourceOperator = resourceOperator;
         this.certManager = certManager;
         this.secretOperations = secretOperations;
@@ -265,7 +261,7 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
         List<? extends HasMetadata> resources = getResources(namespace);
         // now extract the cluster name from those
         Set<String> resourceNames = resources.stream()
-                .filter(r -> Labels.kind(r) == null) // exclude Cluster CM, which won't have a cluster label
+                .filter(r -> !r.getKind().equals(kind)) // exclude desired resource
                 .map(Labels::cluster)
                 .collect(Collectors.toSet());
         log.debug("reconcileAll({}, {}): Other resources with labels {}: {}", assemblyType, trigger, selector, resourceNames);
@@ -304,20 +300,14 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
      */
     protected abstract List<HasMetadata> getResources(String namespace);
 
-    void createWatch(String namespace,
-                     Function<T, AssemblyType> fn2,
-                     BiFunction<T, AssemblyType, AbstractAssemblyOperator<?, ?, ?, ?, ?>> fn3,
-                     Supplier<Void> recreate,
-                     Handler<AsyncResult<Watch>> handler) {
-        Labels selector = null;
-        vertx.executeBlocking(
+    public Future<Watch> createWatch(String namespace, Consumer<KubernetesClientException> onClose) {
+        Future<Watch> result = Future.future();
+        Labels selector = Labels.EMPTY;
+        vertx.<Watch>executeBlocking(
             future -> {
                 Watch watch = resourceOperator.watch(namespace, new Watcher<T>() {
                     @Override
                     public void eventReceived(Action action, T cm) {
-
-
-
                         String name = cm.getMetadata().getName();
                         switch (action) {
                             case ADDED:
@@ -325,7 +315,7 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
                             case MODIFIED:
                                 Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
-                                AbstractAssemblyOperator.this.reconcileAssembly(reconciliation, result -> {
+                                reconcileAssembly(reconciliation, result -> {
                                     if (result.succeeded()) {
                                         log.info("{}: Assembly reconciled", reconciliation);
                                     } else {
@@ -350,43 +340,12 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
 
                     @Override
                     public void onClose(KubernetesClientException e) {
-                        if (e != null) {
-                            log.error("Watcher closed with exception in namespace {}", namespace, e);
-                            recreate.get();
-                        } else {
-                            log.info("Watcher closed in namespace {}", namespace);
-                        }
+                        onClose.accept(e);
                     }
                 });
                 future.complete(watch);
-            }, res -> {
-                if (res.succeeded())    {
-                    log.info("{} watcher running for labels {}", kind, selector);
-                    handler.handle(Future.succeededFuture((Watch) res.result()));
-                } else {
-                    log.info("{} watcher failed to start", kind, res.cause());
-                    handler.handle(Future.failedFuture(kind + " watcher failed to start"));
-                }
-            }
+            }, result.completer()
         );
+        return result;
     }
-
-    private void recreateKafkaWatch() {
-        createKafkaWatch(recreateWatchHandler());
-    }
-
-    private Handler<AsyncResult<Watch>> recreateWatchHandler() {
-        return res -> {
-            if (res.succeeded())    {
-                log.info("{} watch recreated in namespace {}", kind, namespace);
-                watchByKind.put(kind, res.result());
-            } else {
-                log.error("Failed to recreate {} watch in namespace {}", kind, namespace);
-                // We failed to recreate the Watch. We cannot continue without it. Lets close Vert.x and exit.
-                vertx.close();
-            }
-        };
-    }
-
-
 }

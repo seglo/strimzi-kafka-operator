@@ -7,48 +7,50 @@
 |====
 |Field                        |Description
 |spec                  1.2+<.<|
-|<<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+|<<kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
 |additionalProperties  1.2+<.<|
 |map
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec]]
-### `KafkaConnectAssemblySpec` v1alpha1 kafka.strimzi.io
+[[kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssemblySpec]]
+### `KafkaConnectS2IAssemblySpec` v1alpha1 kafka.strimzi.io
 
 Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssembly,`KafkaConnectS2IAssembly`>>
 
 
 [options="header"]
 |====
-|Field                        |Description
-|replicas              1.2+<.<|
+|Field                            |Description
+|replicas                  1.2+<.<|
 |integer
-|image                 1.2+<.<|The docker image for the pods.
+|image                     1.2+<.<|The docker image for the pods.
 |string
-|livenessProbe         1.2+<.<|Pod liveness checking.
+|livenessProbe             1.2+<.<|Pod liveness checking.
 |<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
-|readinessProbe        1.2+<.<|Pod readiness checking.
+|readinessProbe            1.2+<.<|Pod readiness checking.
 |<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
-|jvmOptions            1.2+<.<|JVM Options for pods
+|jvmOptions                1.2+<.<|JVM Options for pods
 |<<kafka.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
-|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+|affinity                  1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
-|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
 |map
-|additionalProperties  1.2+<.<|
+|additionalProperties      1.2+<.<|
 |map
-|config                1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
+|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
 |map
-|resources             1.2+<.<|Resource constraints (limits and requests).
+|insecureSourceRepository  1.2+<.<|
+|boolean
+|resources                 1.2+<.<|Resource constraints (limits and requests).
 |<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
 |====
 
 [[kafka.strimzi.io-v1alpha1-type-Probe]]
 ### `Probe` v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
 
 
 [options="header"]
@@ -65,7 +67,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnect
 [[kafka.strimzi.io-v1alpha1-type-JvmOptions]]
 ### `JvmOptions` v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
 
 
 [options="header"]
@@ -84,7 +86,7 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnect
 [[kafka.strimzi.io-v1alpha1-type-Resources]]
 ### `Resources` v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
 
 
 [options="header"]

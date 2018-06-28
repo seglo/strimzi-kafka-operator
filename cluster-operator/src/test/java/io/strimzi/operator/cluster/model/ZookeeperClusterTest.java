@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,7 +15,6 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 
 public class ZookeeperClusterTest {
@@ -54,7 +52,6 @@ public class ZookeeperClusterTest {
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headful.getSpec().getSelector());
         assertEquals(2, headful.getSpec().getPorts().size());
@@ -76,7 +73,6 @@ public class ZookeeperClusterTest {
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
@@ -102,7 +98,6 @@ public class ZookeeperClusterTest {
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(labels("strimzi.io/cluster", cluster,
-                "strimzi.io/type", "kafka",
                 "my-user-label", "cromulent",
                 "strimzi.io/name", ZookeeperCluster.zookeeperClusterName(cluster)),
                 ss.getMetadata().getLabels());
@@ -144,17 +139,6 @@ public class ZookeeperClusterTest {
 
         for (int i = 0; i < replicas; i++) {
             assertEquals(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperClusterName(cluster) + "-" + i, zc.getPersistentVolumeClaimName(i));
-        }
-    }
-
-    @Test
-    public void testCorruptedConfigMap() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{\"key.name\":oops}");
-            ZookeeperCluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("key.name", e.getKey());
         }
     }
 

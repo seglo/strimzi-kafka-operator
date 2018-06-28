@@ -15,10 +15,8 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
-import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
@@ -98,7 +96,7 @@ public class ZookeeperCluster extends AbstractModel {
      */
     private ZookeeperCluster(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
+        super(namespace, cluster, labels);
         this.name = zookeeperClusterName(cluster);
         this.headlessName = zookeeperHeadlessName(cluster);
         this.metricsConfigName = zookeeperMetricsName(cluster);
@@ -115,41 +113,6 @@ public class ZookeeperCluster extends AbstractModel {
         this.mountPath = "/var/lib/zookeeper";
         this.metricsConfigVolumeName = "zookeeper-metrics-config";
         this.metricsConfigMountPath = "/opt/prometheus/config/";
-    }
-
-
-    /**
-     * Create a Zookeeper cluster from the related ConfigMap resource
-     *
-     * @param kafkaClusterCm ConfigMap with cluster configuration
-     * @return Zookeeper cluster instance
-     */
-    @Deprecated
-    public static ZookeeperCluster fromConfigMap(ConfigMap kafkaClusterCm) {
-        ZookeeperCluster zk = new ZookeeperCluster(kafkaClusterCm.getMetadata().getNamespace(), kafkaClusterCm.getMetadata().getName(),
-                Labels.fromResource(kafkaClusterCm));
-
-        Map<String, String> data = kafkaClusterCm.getData();
-        zk.setReplicas(Utils.getInteger(data, KEY_REPLICAS, Zookeeper.DEFAULT_REPLICAS));
-        zk.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, Zookeeper.DEFAULT_IMAGE));
-        zk.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        zk.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        zk.setMetricsEnabled(metricsConfig != null);
-        if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfig(metricsConfig);
-        }
-
-        zk.setStorage(Utils.getStorage(data, KEY_STORAGE));
-
-        zk.setConfiguration(Utils.getZookeeperConfiguration(data, KEY_ZOOKEEPER_CONFIG));
-
-        zk.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        zk.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        zk.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
-        return zk;
     }
 
     public static ZookeeperCluster fromCrd(KafkaAssembly kafkaAssembly) {

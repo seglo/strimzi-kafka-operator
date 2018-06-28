@@ -8,15 +8,11 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 
 import java.util.List;
 

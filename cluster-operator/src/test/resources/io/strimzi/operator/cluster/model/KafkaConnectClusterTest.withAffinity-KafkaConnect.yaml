@@ -1,12 +1,9 @@
 apiVersion: v1
-kind: ConfigMap
+kind: KafkaConnect
 metadata:
   name: my-connect-cluster
-  labels:
-    strimzi.io/kind: cluster
-    strimzi.io/type: kafka-connect
-data:
-  affinity: |
+spec:
+  affinity:
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:

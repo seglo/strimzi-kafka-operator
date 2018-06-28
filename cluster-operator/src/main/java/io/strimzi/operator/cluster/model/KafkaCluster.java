@@ -22,12 +22,10 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.EphemeralStorage;
-import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.RackConfig;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
@@ -171,54 +169,6 @@ public class KafkaCluster extends AbstractModel {
 
     public static String clientsPublicKeyName(String cluster) {
         return cluster + KafkaCluster.CLIENTS_PUBLIC_KEY_SUFFIX;
-    }
-
-    /**
-     * Create a Kafka cluster from the related ConfigMap resource
-     *
-     * @param kafkaClusterCm ConfigMap with cluster configuration
-     * @param secrets Secrets related to the cluster
-     * @return Kafka cluster instance
-     *
-     * @deprecated Use fromCrd
-     */
-    @Deprecated
-    public static KafkaCluster fromConfigMap(CertManager certManager, ConfigMap kafkaClusterCm, List<Secret> secrets) {
-        KafkaCluster kafka = new KafkaCluster(kafkaClusterCm.getMetadata().getNamespace(),
-                kafkaClusterCm.getMetadata().getName(),
-                Labels.fromResource(kafkaClusterCm));
-
-        Map<String, String> data = kafkaClusterCm.getData();
-        kafka.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafka.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, Kafka.DEFAULT_IMAGE));
-        kafka.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafka.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        kafka.setZookeeperConnect(kafkaClusterCm.getMetadata().getName() + "-zookeeper:2181");
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafka.setMetricsEnabled(metricsConfig != null);
-        if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfig(metricsConfig);
-        }
-
-        kafka.setStorage(Utils.getStorage(data, KEY_STORAGE));
-
-        kafka.setConfiguration(Utils.getKafkaConfiguration(data, KEY_KAFKA_CONFIG));
-
-        kafka.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafka.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-
-        RackConfig rackConfig = RackConfig.fromJson(data.get(KEY_RACK));
-        if (rackConfig != null) {
-            kafka.setRackConfig(rackConfig);
-        }
-        kafka.setInitImage(Utils.getNonEmptyString(data, KEY_INIT_IMAGE, Kafka.DEFAULT_INIT_IMAGE));
-        kafka.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
-        kafka.generateCertificates(certManager, secrets);
-
-        return kafka;
     }
 
     public static KafkaCluster fromCrd(CertManager certManager, KafkaAssembly kafkaAssembly, List<Secret> secrets) {
@@ -673,7 +623,6 @@ public class KafkaCluster extends AbstractModel {
                                 .withTopologyKey(rackConfig.getTopologyKey())
                                 .withNewLabelSelector()
                                     .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
-                                    .addToMatchLabels(Labels.STRIMZI_TYPE_LABEL, AssemblyType.KAFKA.toString())
                                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
                                 .endLabelSelector()
                             .endPodAffinityTerm()

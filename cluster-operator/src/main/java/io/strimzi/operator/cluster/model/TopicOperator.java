@@ -65,7 +65,7 @@ public class TopicOperator extends AbstractModel {
      */
     protected TopicOperator(String namespace, String cluster, Labels labels) {
 
-        super(namespace, cluster, labels.withType(AssemblyType.KAFKA));
+        super(namespace, cluster, labels);
         this.name = topicOperatorName(cluster);
         this.image = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE;
         this.replicas = io.strimzi.api.kafka.model.TopicOperator.DEFAULT_REPLICAS;

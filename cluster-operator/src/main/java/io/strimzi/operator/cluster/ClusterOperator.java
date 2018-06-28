@@ -4,35 +4,24 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.Watchable;
-import io.strimzi.api.kafka.DoneableKafkaAssembly;
-import io.strimzi.api.kafka.KafkaAssemblyList;
-import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.Consumer;
 
 /**
  * An "operator" for managing assemblies of various types <em>in a particular namespace</em>.
@@ -76,6 +65,22 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
     }
 
+    Consumer<KubernetesClientException> recreateWatch(AbstractAssemblyOperator op) {
+        Consumer<KubernetesClientException> cons = new Consumer<KubernetesClientException>() {
+            @Override
+            public void accept(KubernetesClientException e) {
+                if (e != null) {
+                    log.error("Watcher closed with exception in namespace {}", namespace, e);
+                    op.createWatch(namespace, this);
+                } else {
+                    log.info("Watcher closed in namespace {}", namespace);
+                }
+            }
+        };
+        return cons;
+    }
+
+
     @Override
     public void start(Future<Void> start) {
         log.info("Starting ClusterOperator for namespace {}", namespace);
@@ -83,201 +88,40 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", 10, TimeUnit.SECONDS.toNanos(120));
 
-        createConfigMapWatch(cmResult -> {
-            if (cmResult.succeeded()) {
-                watchByKind.put("ConfigMap", cmResult.result());
-                createKafkaWatch(res -> {
-                    if (res.succeeded()) {
-                        watchByKind.put("Kafka", res.result());
-
-                        log.info("Setting up periodical reconciliation for namespace {}", namespace);
-                        this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
-                            log.info("Triggering periodic reconciliation for namespace {}...", namespace);
-                            reconcileAll("timer");
-                        });
-
-                        log.info("ClusterOperator running for namespace {}", namespace);
-
-                        // start the HTTP server for healthchecks
-                        this.startHealthServer();
-
-                        start.complete();
-                    } else {
-                        log.error("ClusterOperator startup failed for namespace {}", namespace, res.cause());
-                        start.fail("ClusterOperator startup failed for namespace " + namespace);
-                    }
+        kafkaAssemblyOperator.createWatch(namespace, recreateWatch(kafkaAssemblyOperator))
+            .compose(w -> {
+                watchByKind.put("Kafka", w);
+                return kafkaConnectAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectAssemblyOperator));
+            })
+            .compose(w -> {
+                watchByKind.put("KafkaConnect", w);
+                // TODO only on OS
+                return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
+            }).compose(w -> {
+                watchByKind.put("KafkaS2IConnect", w);
+                log.info("Setting up periodical reconciliation for namespace {}", namespace);
+                this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
+                    log.info("Triggering periodic reconciliation for namespace {}...", namespace);
+                    reconcileAll("timer");
                 });
-            } else {
-                log.error("ClusterOperator startup failed for namespace {}", namespace, cmResult.cause());
-                start.fail("ClusterOperator startup failed for namespace " + namespace);
-            }
-        });
-
+                return startHealthServer().map((Void) null);
+            }).compose(start::complete, start);
     }
 
-    private void createConfigMapWatch(Handler<AsyncResult<Watch>> timer) {
-        createWatch(
-            "ConfigMap",
-            () -> client.configMaps().inNamespace(namespace).withLabels(selector.toMap()),
-            cm -> {
-                Labels labels = Labels.fromResource(cm);
-                AssemblyType type;
-                try {
-                    type = labels.type();
-                } catch (IllegalArgumentException e) {
-                    log.warn("Unknown {} label {} received in ConfigMap {} in namespace {}",
-                            Labels.STRIMZI_TYPE_LABEL,
-                            cm.getMetadata().getLabels().get(Labels.STRIMZI_TYPE_LABEL),
-                            cm.getMetadata().getName(), namespace);
-                    type = null;
-                }
-                return type;
-            },
-            (cm, type) -> {
-                final AbstractAssemblyOperator<?, ?, ?, ?, ?> cluster;
-                if (type == null) {
-                    log.warn("Missing label {} in ConfigMap {} in namespace {}", Labels.STRIMZI_TYPE_LABEL, cm.getMetadata().getName(), namespace);
-                    return null;
-                } else {
-                    switch (type) {
-                        case CONNECT:
-                            cluster = kafkaConnectAssemblyOperator;
-                            break;
-                        case CONNECT_S2I:
-                            cluster = kafkaConnectS2IAssemblyOperator;
-                            break;
-                        default:
-                            return null;
-                    }
-                }
-                return cluster;
-            },
-            () -> {
-                recreateConfigMapWatch();
-                return null;
-            },
-            timer
-        );
-    }
-
-    private void createKafkaWatch(Handler<AsyncResult<Watch>> timer) {
-        // TODO watch creation should perhaps be a method in the assembly operator
-        createWatch(
-            "Kafka",
-            () -> client.customResources(KafkaAssemblyCrdOperator.getCustomResourceDefinition(),
-                        KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class)
-                    .inNamespace(namespace),
-            cm -> AssemblyType.KAFKA,
-            (cm, type) -> kafkaAssemblyOperator,
-            () -> {
-                recreateKafkaWatch();
-                return null;
-            },
-            timer
-        );
-    }
 
     @Override
     public void stop(Future<Void> stop) {
         log.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
         for (Watch watch : watchByKind.values()) {
-            watch.close();
+            if (watch != null) {
+                watch.close();
+            }
+            // TODO remove the watch from the watchByKind
         }
         client.close();
 
         stop.complete();
-    }
-
-    private <C extends HasMetadata> void createWatch(String kind,
-                                                     Supplier<Watchable<Watch, Watcher<C>>> fn,
-                                                     Function<C, AssemblyType> fn2,
-                                                     BiFunction<C, AssemblyType, AbstractAssemblyOperator<?, ?, ?, ?, ?>> fn3,
-                                                     Supplier<Void> recreate,
-                                                     Handler<AsyncResult<Watch>> handler) {
-        getVertx().executeBlocking(
-            future -> {
-
-                Watchable<Watch, Watcher<C>> watchable = fn.get();
-                Watch watch = watchable.watch(new Watcher<C>() {
-                    @Override
-                    public void eventReceived(Action action, C cm) {
-
-                        AssemblyType type = fn2.apply(cm);
-                        AbstractAssemblyOperator<?, ?, ?, ?, ?> cluster = fn3.apply(cm, type);
-
-                        String name = cm.getMetadata().getName();
-                        switch (action) {
-                            case ADDED:
-                            case DELETED:
-                            case MODIFIED:
-                                Reconciliation reconciliation = new Reconciliation("watch", type, namespace, name);
-                                log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
-                                cluster.reconcileAssembly(reconciliation, result -> {
-                                    if (result.succeeded()) {
-                                        log.info("{}: Assembly reconciled", reconciliation);
-                                    } else {
-                                        Throwable cause = result.cause();
-                                        if (cause instanceof InvalidConfigMapException) {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-                                        } else {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-                                        }
-                                    }
-                                });
-                                break;
-                            case ERROR:
-                                log.error("Failed {} {} in namespace{} ", kind, name, namespace);
-                                reconcileAll("watch error");
-                                break;
-                            default:
-                                log.error("Unknown action: {} in namespace {}", name, namespace);
-                                reconcileAll("watch unknown");
-                        }
-                    }
-
-                    @Override
-                    public void onClose(KubernetesClientException e) {
-                        if (e != null) {
-                            log.error("Watcher closed with exception in namespace {}", namespace, e);
-                            recreate.get();
-                        } else {
-                            log.info("Watcher closed in namespace {}", namespace);
-                        }
-                    }
-                });
-                future.complete(watch);
-            }, res -> {
-                if (res.succeeded())    {
-                    log.info("{} watcher running for labels {}", kind, selector);
-                    handler.handle(Future.succeededFuture((Watch) res.result()));
-                } else {
-                    log.info("{} watcher failed to start", kind, res.cause());
-                    handler.handle(Future.failedFuture(kind + " watcher failed to start"));
-                }
-            }
-        );
-    }
-
-    private void recreateConfigMapWatch() {
-        createConfigMapWatch(recreateWatchHandler("ConfigMap"));
-    }
-
-    private void recreateKafkaWatch() {
-        createKafkaWatch(recreateWatchHandler("Kafka"));
-    }
-
-    private Handler<AsyncResult<Watch>> recreateWatchHandler(String kind) {
-        return res -> {
-            if (res.succeeded())    {
-                log.info("{} watch recreated in namespace {}", kind, namespace);
-                watchByKind.put(kind, res.result());
-            } else {
-                log.error("Failed to recreate {} watch in namespace {}", kind, namespace);
-                // We failed to recreate the Watch. We cannot continue without it. Lets close Vert.x and exit.
-                vertx.close();
-            }
-        };
     }
 
     /**
@@ -295,8 +139,8 @@ public class ClusterOperator extends AbstractVerticle {
     /**
      * Start an HTTP health server
      */
-    private void startHealthServer() {
-
+    private Future<HttpServer> startHealthServer() {
+        Future<HttpServer> result = Future.future();
         this.vertx.createHttpServer()
                 .requestHandler(request -> {
 
@@ -312,7 +156,9 @@ public class ClusterOperator extends AbstractVerticle {
                     } else {
                         log.error("Unable to bind health server on {}", HEALTH_SERVER_PORT, ar.cause());
                     }
+                    result.handle(ar);
                 });
+        return result;
     }
 
 }

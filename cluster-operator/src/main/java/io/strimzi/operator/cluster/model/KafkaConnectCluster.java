@@ -17,16 +17,17 @@ import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectAssemblySpec;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Collections.emptySet;
 
 public class KafkaConnectCluster extends AbstractModel {
 
@@ -95,38 +96,6 @@ public class KafkaConnectCluster extends AbstractModel {
         return cluster + KafkaConnectCluster.METRICS_CONFIG_SUFFIX;
     }
 
-    /**
-     * Create a Kafka Connect cluster from the related ConfigMap resource
-     *
-     * @param cm ConfigMap with cluster configuration
-     * @return Kafka Connect cluster instance
-     */
-    @Deprecated
-    public static KafkaConnectCluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectCluster kafkaConnect = new KafkaConnectCluster(cm.getMetadata().getNamespace(),
-                cm.getMetadata().getName(),
-                Labels.fromResource(cm));
-
-        Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(Integer.parseInt(data.getOrDefault(KEY_REPLICAS, String.valueOf(DEFAULT_REPLICAS))));
-        kafkaConnect.setImage(data.getOrDefault(KEY_IMAGE, DEFAULT_IMAGE));
-        kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_DELAY, String.valueOf(DEFAULT_HEALTHCHECK_DELAY))));
-        kafkaConnect.setHealthCheckTimeout(Integer.parseInt(data.getOrDefault(KEY_HEALTHCHECK_TIMEOUT, String.valueOf(DEFAULT_HEALTHCHECK_TIMEOUT))));
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafkaConnect.setMetricsEnabled(metricsConfig != null);
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfig(metricsConfig);
-        }
-
-        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
-        kafkaConnect.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
-
-        return kafkaConnect;
-    }
-
     public static KafkaConnectCluster fromCrd(KafkaConnectAssembly crd) {
         return fromSpec(crd.getSpec(),
                 new KafkaConnectCluster(crd.getMetadata().getNamespace(),
@@ -140,24 +109,26 @@ public class KafkaConnectCluster extends AbstractModel {
      * thus permitting reuse of the setter-calling code for subclasses.
      */
     protected static <C extends KafkaConnectCluster> C fromSpec(KafkaConnectAssemblySpec spec, C kafkaConnect) {
-        kafkaConnect.setReplicas(spec.getReplicas());
-        kafkaConnect.setImage(spec.getImage());
-        kafkaConnect.setResources(spec.getResources());
-        kafkaConnect.setJvmOptions(spec.getJvmOptions());
-        if (spec.getReadinessProbe() != null) {
-            kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
-            kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+        kafkaConnect.setReplicas(spec != null ? spec.getReplicas() : DEFAULT_REPLICAS);
+        kafkaConnect.setImage(spec != null ? spec.getImage() : DEFAULT_IMAGE);
+        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec != null ? spec.getConfig().entrySet() : emptySet()));
+        if (spec != null) {
+            kafkaConnect.setResources(spec.getResources());
+            kafkaConnect.setJvmOptions(spec.getJvmOptions());
+            if (spec.getReadinessProbe() != null) {
+                kafkaConnect.setReadinessInitialDelay(spec.getReadinessProbe().getInitialDelaySeconds());
+                kafkaConnect.setReadinessTimeout(spec.getReadinessProbe().getTimeoutSeconds());
+            }
+            if (spec.getLivenessProbe() != null) {
+                kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
+                kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
+            }
+            kafkaConnect.setMetricsEnabled(spec.getMetrics() != null);
+            if (kafkaConnect.isMetricsEnabled()) {
+                kafkaConnect.setMetricsConfig(spec.getMetrics().entrySet());
+            }
+            kafkaConnect.setUserAffinity(spec.getAffinity());
         }
-        if (spec.getLivenessProbe() != null) {
-            kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
-            kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
-        }
-        kafkaConnect.setMetricsEnabled(spec.getMetrics() != null);
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfig(spec.getMetrics().entrySet());
-        }
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(spec.getConfig().entrySet()));
-        kafkaConnect.setUserAffinity(spec.getAffinity());
         return kafkaConnect;
     }
 
@@ -208,7 +179,12 @@ public class KafkaConnectCluster extends AbstractModel {
 
     public ConfigMap generateMetricsConfigMap() {
         if (isMetricsEnabled()) {
-            Map<String, String> data = Collections.singletonMap(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            Map<String, String> data = new HashMap<>();
+            HashMap m = new HashMap();
+            for (Map.Entry<String, Object> entry : getMetricsConfig()) {
+                m.put(entry.getKey(), entry.getValue());
+            }
+            data.put(METRICS_CONFIG_FILE, new JsonObject(m).toString());
             return createConfigMap(getMetricsConfigName(), data);
         } else {
             return null;

@@ -14,18 +14,15 @@ import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.RackConfig;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -67,7 +64,6 @@ public class KafkaClusterTest {
     private void checkService(Service headful) {
         assertEquals("ClusterIP", headful.getSpec().getType());
         assertEquals(ResourceUtils.labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headful.getSpec().getSelector());
         assertEquals(3, headful.getSpec().getPorts().size());
@@ -87,7 +83,6 @@ public class KafkaClusterTest {
         assertEquals("ClusterIP", headless.getSpec().getType());
         assertEquals("None", headless.getSpec().getClusterIP());
         assertEquals(labels(Labels.STRIMZI_CLUSTER_LABEL, cluster,
-                Labels.STRIMZI_TYPE_LABEL, "kafka",
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)), headless.getSpec().getSelector());
         assertEquals(3, headless.getSpec().getPorts().size());
@@ -133,7 +128,6 @@ public class KafkaClusterTest {
         assertEquals(namespace, ss.getMetadata().getNamespace());
         // ... with these labels
         assertEquals(labels("strimzi.io/cluster", cluster,
-                "strimzi.io/type", "kafka",
                 "my-user-label", "cromulent",
                 "strimzi.io/name", KafkaCluster.kafkaClusterName(cluster)),
                 ss.getMetadata().getLabels());
@@ -221,70 +215,6 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < replicas; i++) {
             assertEquals(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i), kc.getPersistentVolumeClaimName(i));
-        }
-    }
-
-    @Test
-    public void testCorruptedConfigMap() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, "{\"key.name\": oops}");
-            KafkaCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("key.name", e.getKey());
-        }
-    }
-
-    @Test
-    public void testCorruptedConfigMapMetrics() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "", configurationJson, null, null);
-            KafkaCluster.fromConfigMap(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("JSON - empty value", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : true \n," +
-                            "\"rules\": }", configurationJson, null, null);
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "    {\n" +
-                            "    \"lowercaseOutputName\": true,\n" +
-                            "    \"rules\": [{\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*><>Count\",\n" +
-                            "    \"name\": \"kafka_server_$1_$2_total\"\n" +
-                            "    },\n" +
-                            "    {\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*, topic=(.+)><>Count\",\n" +
-                            "    \"name\": \"x\",\n" +
-                            "    \"labels\": \n" +
-                            "    }\n" +
-                            "    ]\n" +
-                            "    }", configurationJson, null, null);
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : tru \n," +
-                            "\"rules\": \"I am valid\" }", configurationJson, null, null);
-            KafkaCluster.fromConfigMap(certManager, cm, Collections.emptyList());
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("lowercaseOutputName", e.getKey());
         }
     }
 

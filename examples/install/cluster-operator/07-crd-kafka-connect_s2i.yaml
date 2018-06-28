@@ -314,6 +314,8 @@ spec:
               description: 'The Kafka Connect configuration. Properties with the following
                 prefixes cannot be set: ssl., sasl., security., listeners, plugin.path,
                 rest.'
+            insecureSourceRepository:
+              type: boolean
             resources:
               description: Resource constraints (limits and requests).
               type: object

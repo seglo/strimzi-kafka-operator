@@ -11,10 +11,15 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.JsonUtils;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.KafkaAssemblySpec;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.RackConfig;
 import io.strimzi.api.kafka.model.Storage;
@@ -93,6 +98,15 @@ public class ResourceUtils {
                 healthTimeout, metricsCmJson, kafkaConfigurationJson, zooConfigurationJson,
                 "{\"type\": \"ephemeral\"}", null, null);
     }
+
+    public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                   String image, int healthDelay, int healthTimeout,
+                                                   String metricsCmJson) {
+        return createKafkaCluster(clusterCmNamespace, clusterCmName, replicas, image, healthDelay,
+                healthTimeout, metricsCmJson, "{}", "{}",
+                "{\"type\": \"ephemeral\"}", null, null);
+    }
+
     public static KafkaAssembly createKafkaCluster(String clusterCmNamespace, String clusterCmName, int replicas,
                                                         String image, int healthDelay, int healthTimeout,
                                                         String metricsCmJson, String kafkaConfigurationJson,
@@ -266,7 +280,7 @@ public class ResourceUtils {
             ObjectMeta meta = new ObjectMeta();
             meta.setNamespace(clusterCmNamespace);
             meta.setName(clusterCmName);
-            meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).withKind("cluster").withType(AssemblyType.KAFKA).toMap());
+            meta.setLabels(Labels.userLabels(singletonMap("my-user-label", "cromulent")).toMap());
             result.setMetadata(meta);
 
             KafkaAssemblySpec spec = new KafkaAssemblySpec();
@@ -357,6 +371,41 @@ public class ResourceUtils {
     }
 
     /**
+     * Generate ConfigMap for Kafka Connect S2I cluster
+     */
+    public static KafkaConnectS2IAssembly createKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                                       String image, int healthDelay, int healthTimeout, String metricsCmJson,
+                                                                       String connectConfig, boolean insecureSourceRepo) {
+
+        return new KafkaConnectS2IAssemblyBuilder(createEmptyKafkaConnectS2ICluster(clusterCmNamespace, clusterCmName))
+                .withNewSpec()
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                    .withMetrics((Map<String, Object>) JsonUtils.fromJson(metricsCmJson, Map.class))
+                    .withConfig((Map<String, Object>) JsonUtils.fromJson(connectConfig, Map.class))
+                    .withInsecureSourceRepository(insecureSourceRepo)
+                .endSpec().build();
+    }
+
+    /**
+     * Generate empty Kafka Connect S2I ConfigMap
+     */
+    public static KafkaConnectS2IAssembly createEmptyKafkaConnectS2ICluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaConnectS2IAssemblyBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                .withName(clusterCmName)
+                .withNamespace(clusterCmNamespace)
+                .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
+                        Labels.STRIMZI_TYPE_LABEL, "kafka-connect-s2i",
+                        "my-user-label", "cromulent"))
+                .build())
+                .withNewSpec().endSpec()
+                .build();
+    }
+
+    /**
      * Generate ConfigMap for Kafka Connect cluster
      */
     public static ConfigMap createKafkaConnectClusterConfigMap(String clusterCmNamespace, String clusterCmName, int replicas,
@@ -396,4 +445,36 @@ public class ResourceUtils {
     }
 
 
+    public static KafkaConnectAssembly createKafkaConnectCluster(String clusterCmNamespace, String clusterCmName, int replicas,
+                                                                 String image, int healthDelay, int healthTimeout, String metricsCmJson, String connectConfig) {
+
+        KafkaConnectAssembly cm = createEmptyKafkaConnectCluster(clusterCmNamespace, clusterCmName);
+        return new KafkaConnectAssemblyBuilder(cm)
+                .withNewSpec()
+                    .withMetrics((Map<String, Object>) JsonUtils.fromJson(metricsCmJson, Map.class))
+                    .withConfig((Map<String, Object>) JsonUtils.fromJson(connectConfig, Map.class))
+                    .withImage(image)
+                    .withReplicas(replicas)
+                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
+                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
+                .endSpec()
+            .build();
+
+    }
+
+    /**
+     * Generate empty Kafka Connect ConfigMap
+     */
+    public static KafkaConnectAssembly createEmptyKafkaConnectCluster(String clusterCmNamespace, String clusterCmName) {
+        return new KafkaConnectAssemblyBuilder()
+                .withMetadata(new ObjectMetaBuilder()
+                        .withName(clusterCmName)
+                        .withNamespace(clusterCmNamespace)
+                        .withLabels(labels(Labels.STRIMZI_KIND_LABEL, "cluster",
+                                Labels.STRIMZI_TYPE_LABEL, "kafka-connect",
+                                "my-user-label", "cromulent"))
+                        .build())
+                .withNewSpec().endSpec()
+                .build();
+    }
 }

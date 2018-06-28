@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -27,11 +26,8 @@ import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
-import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
-import io.strimzi.api.kafka.model.Resources;
-import io.vertx.core.json.JsonObject;
 
 import java.util.Map;
 
@@ -59,41 +55,12 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         setImage(DEFAULT_IMAGE);
     }
 
-    /**
-     * Create a Kafka Connect cluster from the related ConfigMap resource
-     *
-     * @param cm ConfigMap with cluster configuration
-     * @return Kafka Connect cluster instance
-     */
-    public static KafkaConnectS2ICluster fromConfigMap(ConfigMap cm) {
-        KafkaConnectS2ICluster kafkaConnect = new KafkaConnectS2ICluster(cm.getMetadata().getNamespace(), cm.getMetadata().getName(), Labels.fromResource(cm));
-
-        Map<String, String> data = cm.getData();
-        kafkaConnect.setReplicas(Utils.getInteger(data, KEY_REPLICAS, DEFAULT_REPLICAS));
-        kafkaConnect.setImage(Utils.getNonEmptyString(data, KEY_IMAGE, DEFAULT_IMAGE));
-        kafkaConnect.setResources(Resources.fromJson(data.get(KEY_RESOURCES)));
-        kafkaConnect.setJvmOptions(JvmOptions.fromJson(data.get(KEY_JVM_OPTIONS)));
-        kafkaConnect.setHealthCheckInitialDelay(Utils.getInteger(data, KEY_HEALTHCHECK_DELAY, DEFAULT_HEALTHCHECK_DELAY));
-        kafkaConnect.setHealthCheckTimeout(Utils.getInteger(data, KEY_HEALTHCHECK_TIMEOUT, DEFAULT_HEALTHCHECK_TIMEOUT));
-
-        kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
-        kafkaConnect.setInsecureSourceRepository(Utils.getBoolean(data, KEY_INSECURE_SOURCE_REPO, false));
-
-        JsonObject metricsConfig = Utils.getJson(data, KEY_METRICS_CONFIG);
-        kafkaConnect.setMetricsEnabled(metricsConfig != null);
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfig(metricsConfig);
-        }
-
-        return kafkaConnect;
-    }
-
     public static KafkaConnectS2ICluster fromCrd(KafkaConnectS2IAssembly crd) {
         KafkaConnectS2IAssemblySpec spec = crd.getSpec();
         KafkaConnectS2ICluster cluster = fromSpec(spec, new KafkaConnectS2ICluster(crd.getMetadata().getNamespace(),
                 crd.getMetadata().getName(),
                 Labels.fromResource(crd)));
-        cluster.setInsecureSourceRepository(spec.isInsecureSourceRepository());
+        cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
         return cluster;
     }
 

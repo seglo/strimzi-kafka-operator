@@ -13,7 +13,7 @@ import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageStream;
-import io.strimzi.operator.cluster.InvalidConfigMapException;
+import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+
 
 public class KafkaConnectS2IClusterTest {
     private final String namespace = "test";
@@ -59,9 +59,9 @@ public class KafkaConnectS2IClusterTest {
             "internal.value.converter=org.apache.kafka.connect.json.JsonConverter\n";
     private final boolean insecureSourceRepo = false;
 
-    private final ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+    private final KafkaConnectS2IAssembly cm = ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
             healthDelay, healthTimeout, metricsCmJson, configurationJson, insecureSourceRepo);
-    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(cm);
+    private final KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(cm);
 
     @Test
     public void testMetricsConfigMap() {
@@ -84,7 +84,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testDefaultValues() {
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(namespace, cluster));
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster));
 
         assertEquals(kc.kafkaConnectClusterName(cluster) + ":latest", kc.image);
         assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, kc.replicas);
@@ -126,7 +126,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testFromDeploymentWithDefaultValues() {
-        KafkaConnectS2ICluster defaultsKc = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createEmptyKafkaConnectS2IClusterConfigMap(namespace, cluster));
+        KafkaConnectS2ICluster defaultsKc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster));
         KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromAssembly(namespace, cluster, defaultsKc.generateDeploymentConfig(), defaultsKc.generateSourceImageStream());
 
         assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
@@ -245,7 +245,7 @@ public class KafkaConnectS2IClusterTest {
 
     @Test
     public void testInsecureSourceRepo() {
-        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromConfigMap(ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image,
+        KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createKafkaConnectS2ICluster(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout,  metricsCmJson, configurationJson, true));
 
         assertTrue(kc.isInsecureSourceRepository());
@@ -278,58 +278,5 @@ public class KafkaConnectS2IClusterTest {
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_NAME_LABEL, kc.kafkaConnectClusterName(cluster)), is.getMetadata().getLabels());
         assertEquals(true, is.getSpec().getLookupPolicy().getLocal());
-    }
-
-    @Test
-    public void testCorruptedConfigMapMetrics() {
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "", configurationJson, insecureSourceRepo);
-            KafkaConnectS2ICluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("JSON - empty value", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : true \n," +
-                            "\"rules\": }", configurationJson, insecureSourceRepo);
-            KafkaConnectS2ICluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "    {\n" +
-                            "    \"lowercaseOutputName\": true,\n" +
-                            "    \"rules\": [{\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*><>Count\",\n" +
-                            "    \"name\": \"kafka_server_$1_$2_total\"\n" +
-                            "    },\n" +
-                            "    {\n" +
-                            "    \"pattern\": \"kafka.server<type=(.+), name=(.+)PerSec\\\\w*, topic=(.+)><>Count\",\n" +
-                            "    \"name\": \"x\",\n" +
-                            "    \"labels\": \n" +
-                            "    }\n" +
-                            "    ]\n" +
-                            "    }", configurationJson, insecureSourceRepo);
-            KafkaConnectS2ICluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("Unexpected character - }", e.getKey());
-        }
-
-        try {
-            ConfigMap cm = ResourceUtils.createKafkaConnectS2IClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout,
-                    "{\"lowercaseOutputName\" : tru \n," +
-                            "\"rules\": \"I am valid\" }", configurationJson, insecureSourceRepo);
-            KafkaConnectS2ICluster.fromConfigMap(cm);
-            fail("Expected it to throw an exception");
-        } catch (InvalidConfigMapException e) {
-            assertEquals("lowercaseOutputName", e.getKey());
-        }
     }
 }

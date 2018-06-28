@@ -55,6 +55,7 @@ public class KafkaConnectS2IAssembly extends CustomResource {
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;
 
     private String apiVersion;
+    private ObjectMeta metadata;
     private transient KafkaConnectS2IAssemblySpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

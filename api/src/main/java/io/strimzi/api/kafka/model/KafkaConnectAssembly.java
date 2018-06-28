@@ -56,6 +56,7 @@ public class KafkaConnectAssembly extends CustomResource {
 
     private String apiVersion;
     private transient KafkaConnectAssemblySpec spec;
+    private ObjectMeta metadata;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Override
