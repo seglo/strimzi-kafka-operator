@@ -21,6 +21,8 @@ rules:
   - "kafka.strimzi.io"
   resources:
   - kafkas
+  - kafkaconnects
+  - kafkaconnects2is
   verbs:
   - get
   - list
