@@ -243,7 +243,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         /** Runs after the test, even it if failed or the JVM can killed */
         protected abstract void after();
 
-        protected void onError(Throwable t) {}
+        protected void onError(Throwable t) {
+            logState(t);
+        }
 
         @Override
         public void run() {
@@ -342,7 +344,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             try {
                 for (String resourceName : kubeClient().list(resourceType)) {
                     LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
-                            System.lineSeparator(), indent(kubeClient().getResourceAsJson(resourceType, resourceName)));
+                            System.lineSeparator(), indent(kubeClient().getResourceAsYaml(resourceType, resourceName)));
                 }
             } catch (KubeClusterException e) {
                 t.addSuppressed(e);

@@ -343,8 +343,14 @@ public abstract class BaseKubeClient<K extends BaseKubeClient<K>> implements Kub
         return asList(Exec.exec(namespacedCommand("get", resourceType, "-o", "jsonpath={range .items[*]}{.metadata.name} ")).out().trim().split(" +")).stream().filter(s -> !s.trim().isEmpty()).collect(Collectors.toList());
     }
 
+    @Override
     public String getResourceAsJson(String resourceType, String resourceName) {
         return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "json")).out();
+    }
+
+    @Override
+    public String getResourceAsYaml(String resourceType, String resourceName) {
+        return Exec.exec(namespacedCommand("get", resourceType, resourceName, "-o", "yaml")).out();
     }
 
     @Override

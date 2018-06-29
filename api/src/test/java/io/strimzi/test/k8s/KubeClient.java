@@ -131,6 +131,8 @@ public interface KubeClient<K extends KubeClient<K>> {
 
     List<String> list(String resourceType);
 
+    String getResourceAsYaml(String resourceType, String resourceName);
+
     String describe(String resourceType, String resourceName);
 
     String logs(String pod);
