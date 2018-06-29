@@ -105,33 +105,6 @@ public class KafkaConnectClusterTest {
     }
 
     @Test
-    public void testFromDeployment() {
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, kc.generateDeployment());
-
-        assertEquals(replicas, newKc.replicas);
-        assertEquals(image, newKc.image);
-        assertEquals(healthDelay, newKc.readinessInitialDelay);
-        assertEquals(healthTimeout, newKc.readinessTimeout);
-        assertEquals(healthDelay, newKc.livenessInitialDelay);
-        assertEquals(healthTimeout, newKc.livenessTimeout);
-        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
-    }
-
-    @Test
-    public void testFromDeploymentWithDefaultValues() {
-        KafkaConnectCluster defaultsKc = KafkaConnectCluster.fromCrd(ResourceUtils.createEmptyKafkaConnectCluster(namespace, cluster));
-        KafkaConnectCluster newKc = KafkaConnectCluster.fromAssembly(namespace, cluster, defaultsKc.generateDeployment());
-
-        assertEquals(KafkaConnectCluster.DEFAULT_REPLICAS, newKc.replicas);
-        assertEquals(KafkaConnectCluster.DEFAULT_IMAGE, newKc.image);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.readinessInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.readinessTimeout);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY, newKc.livenessInitialDelay);
-        assertEquals(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.livenessTimeout);
-        assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
-    }
-
-    @Test
     public void testEnvVars()   {
         assertEquals(getExpectedEnvVars(), kc.getEnvVars());
     }

@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
@@ -129,41 +128,6 @@ public class KafkaConnectCluster extends AbstractModel {
             }
             kafkaConnect.setUserAffinity(spec.getAffinity());
         }
-        return kafkaConnect;
-    }
-
-    /**
-     * Create a Kafka Connect cluster from the deployed Deployment resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @param dep The deployment from which to recover the cluster state
-     * @return  Kafka Connect cluster instance
-     */
-    public static KafkaConnectCluster fromAssembly(
-            String namespace, String cluster,
-            Deployment dep) {
-        if (dep == null) {
-            return null;
-        }
-
-        KafkaConnectCluster kafkaConnect =  new KafkaConnectCluster(namespace, cluster, Labels.fromResource(dep));
-
-        kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafkaConnect.setImage(container.getImage());
-        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-        Map<String, String> vars = containerEnvVars(container);
-
-        kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(metricsConfigName(cluster));
-        }
-
         return kafkaConnect;
     }
 

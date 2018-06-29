@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
@@ -16,7 +14,6 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Represents the topic operator deployment
@@ -162,46 +159,20 @@ public class TopicOperator extends AbstractModel {
     }
 
     /**
-     * Create a Topic Operator from the related ConfigMap resource
+     * Create a Topic Operator from given desired resource
      *
-     * @param kafkaClusterCm ConfigMap with cluster configuration containing the topic operator one
+     * @param resource desired resource with cluster configuration containing the topic operator one
      * @return Topic Operator instance, null if not configured in the ConfigMap
      */
-    @Deprecated
-    public static TopicOperator fromConfigMap(ConfigMap kafkaClusterCm) {
-        TopicOperator topicOperator = null;
-
-        String config = kafkaClusterCm.getData().get(KEY_CONFIG);
-        if (config != null) {
-            String namespace = kafkaClusterCm.getMetadata().getNamespace();
-            topicOperator = new TopicOperator(namespace,
-                    kafkaClusterCm.getMetadata().getName(),
-                    Labels.fromResource(kafkaClusterCm));
-
-            io.strimzi.api.kafka.model.TopicOperator tcConfig = io.strimzi.api.kafka.model.TopicOperator.fromJson(config);
-
-            topicOperator.setImage(tcConfig.getImage());
-            topicOperator.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
-            topicOperator.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
-            topicOperator.setZookeeperSessionTimeoutMs(tcConfig.getZookeeperSessionTimeoutSeconds());
-            topicOperator.setTopicMetadataMaxAttempts(tcConfig.getTopicMetadataMaxAttempts());
-            topicOperator.setResources(tcConfig.getResources());
-            topicOperator.setUserAffinity(tcConfig.getAffinity());
-        }
-
-        return topicOperator;
-    }
-
-
-    public static TopicOperator fromCrd(KafkaAssembly kafkaAssembly) {
+    public static TopicOperator fromCrd(KafkaAssembly resource) {
         TopicOperator result;
-        if (kafkaAssembly.getSpec().getTopicOperator() != null) {
-            String namespace = kafkaAssembly.getMetadata().getNamespace();
+        if (resource.getSpec().getTopicOperator() != null) {
+            String namespace = resource.getMetadata().getNamespace();
             result = new TopicOperator(
                     namespace,
-                    kafkaAssembly.getMetadata().getName(),
-                    Labels.fromResource(kafkaAssembly));
-            io.strimzi.api.kafka.model.TopicOperator tcConfig = kafkaAssembly.getSpec().getTopicOperator();
+                    resource.getMetadata().getName(),
+                    Labels.fromResource(resource));
+            io.strimzi.api.kafka.model.TopicOperator tcConfig = resource.getSpec().getTopicOperator();
             result.setImage(tcConfig.getImage());
             result.setWatchedNamespace(tcConfig.getWatchedNamespace() != null ? tcConfig.getWatchedNamespace() : namespace);
             result.setReconciliationIntervalMs(tcConfig.getReconciliationIntervalSeconds());
@@ -213,42 +184,6 @@ public class TopicOperator extends AbstractModel {
             result = null;
         }
         return result;
-    }
-
-    /**
-     * Create a Topic Operator from the deployed Deployment resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources are going to be created
-     * @param cluster overall cluster name
-     * @param dep the deployment from which to recover the topic operator state
-     * @return Topic Operator instance, null if the corresponding Deployment doesn't exist
-     */
-    public static TopicOperator fromAssembly(String namespace, String cluster, Deployment dep) {
-
-        TopicOperator topicOperator = null;
-
-        if (dep != null) {
-
-            topicOperator = new TopicOperator(namespace, cluster,
-                    Labels.fromResource(dep));
-            topicOperator.setReplicas(dep.getSpec().getReplicas());
-            Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-            topicOperator.setImage(container.getImage());
-            topicOperator.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-            topicOperator.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-            Map<String, String> vars = containerEnvVars(container);
-
-            topicOperator.setKafkaBootstrapServers(vars.getOrDefault(KEY_KAFKA_BOOTSTRAP_SERVERS, defaultBootstrapServers(cluster)));
-            topicOperator.setZookeeperConnect(vars.getOrDefault(KEY_ZOOKEEPER_CONNECT, defaultZookeeperConnect(cluster)));
-            topicOperator.setWatchedNamespace(vars.getOrDefault(KEY_WATCHED_NAMESPACE, namespace));
-            topicOperator.setReconciliationIntervalMs(vars.get(KEY_FULL_RECONCILIATION_INTERVAL_MS));
-            topicOperator.setZookeeperSessionTimeoutMs(vars.get(KEY_ZOOKEEPER_SESSION_TIMEOUT_MS));
-            topicOperator.setTopicConfigMapLabels(vars.getOrDefault(KEY_CONFIGMAP_LABELS, defaultTopicConfigMapLabels(cluster)));
-            topicOperator.setTopicMetadataMaxAttempts(Integer.parseInt(vars.getOrDefault(KEY_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS))));
-        }
-
-        return topicOperator;
     }
 
     public Deployment generateDeployment() {

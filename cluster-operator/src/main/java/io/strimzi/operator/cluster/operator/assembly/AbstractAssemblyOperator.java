@@ -275,16 +275,7 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
         for (String name: desiredNames) {
             Reconciliation reconciliation = new Reconciliation(trigger, assemblyType, namespace, name);
             reconcileAssembly(reconciliation, result -> {
-                if (result.succeeded()) {
-                    log.info("{}: Assembly reconciled", reconciliation);
-                } else {
-                    Throwable cause = result.cause();
-                    if (cause instanceof InvalidConfigMapException) {
-                        log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-                    } else {
-                        log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-                    }
-                }
+                handleResult(reconciliation, result);
                 latch.countDown();
             });
         }
@@ -316,16 +307,7 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
                                 Reconciliation reconciliation = new Reconciliation("watch", assemblyType, namespace, name);
                                 log.info("{}: {} {} in namespace {} was {}", reconciliation, kind, name, namespace, action);
                                 reconcileAssembly(reconciliation, result -> {
-                                    if (result.succeeded()) {
-                                        log.info("{}: Assembly reconciled", reconciliation);
-                                    } else {
-                                        Throwable cause = result.cause();
-                                        if (cause instanceof InvalidConfigMapException) {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
-                                        } else {
-                                            log.warn("{}: Failed to reconcile {}", reconciliation, cause);
-                                        }
-                                    }
+                                    handleResult(reconciliation, result);
                                 });
                                 break;
                             case ERROR:
@@ -347,5 +329,21 @@ public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
             }, result.completer()
         );
         return result;
+    }
+
+    /**
+     * Log the reconciliation outcome.
+     */
+    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result) {
+        if (result.succeeded()) {
+            log.info("{}: Assembly reconciled", reconciliation);
+        } else {
+            Throwable cause = result.cause();
+            if (cause instanceof InvalidConfigMapException) {
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause.getMessage());
+            } else {
+                log.warn("{}: Failed to reconcile {}", reconciliation, cause);
+            }
+        }
     }
 }

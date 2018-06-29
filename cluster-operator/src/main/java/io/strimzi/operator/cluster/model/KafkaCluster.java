@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.RackConfig;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.operator.assembly.AbstractAssemblyOperator;
 import io.vertx.core.json.JsonObject;
 
@@ -200,70 +199,6 @@ public class KafkaCluster extends AbstractModel {
         result.generateCertificates(certManager, secrets);
 
         return result;
-    }
-
-    /**
-     * Create a Kafka cluster from the deployed StatefulSet resource
-     *
-     * @param ss The StatefulSet from which the cluster state should be recovered.
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @return  Kafka cluster instance
-     */
-    public static KafkaCluster fromAssembly(StatefulSet ss, String namespace, String cluster) {
-
-        KafkaCluster kafka = new KafkaCluster(namespace, cluster, Labels.fromResource(ss));
-
-        kafka.setReplicas(ss.getSpec().getReplicas());
-        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafka.setImage(container.getImage());
-        kafka.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafka.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        kafka.setZookeeperConnect(vars.getOrDefault(ENV_VAR_KAFKA_ZOOKEEPER_CONNECT, ss.getMetadata().getName() + "-zookeeper:2181"));
-
-        kafka.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_METRICS_ENABLED, DEFAULT_KAFKA_METRICS_ENABLED));
-        if (kafka.isMetricsEnabled()) {
-            kafka.setMetricsConfigName(metricConfigsName(cluster));
-        }
-
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-
-            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
-            if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-                storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
-            }
-            kafka.setStorage(storage);
-        } else {
-            Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
-            kafka.setStorage(storage);
-        }
-
-        String kafkaConfiguration = containerEnvVars(container).get(ENV_VAR_KAFKA_CONFIGURATION);
-        if (kafkaConfiguration != null) {
-            kafka.setConfiguration(new KafkaConfiguration(kafkaConfiguration));
-        }
-
-        Affinity affinity = ss.getSpec().getTemplate().getSpec().getAffinity();
-        if (affinity != null
-                && affinity.getPodAntiAffinity() != null
-                && affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution() != null) {
-            String rackTopologyKey = affinity.getPodAntiAffinity().getPreferredDuringSchedulingIgnoredDuringExecution().get(0).getPodAffinityTerm().getTopologyKey();
-            kafka.setRackConfig(new RackConfig(rackTopologyKey));
-        }
-
-        List<Container> initContainers = ss.getSpec().getTemplate().getSpec().getInitContainers();
-        if (initContainers != null && !initContainers.isEmpty()) {
-
-            initContainers.stream()
-                    .filter(ic -> ic.getName().equals(INIT_NAME))
-                    .forEach(ic -> kafka.setInitImage(ic.getImage()));
-        }
-
-        return kafka;
     }
 
     /**

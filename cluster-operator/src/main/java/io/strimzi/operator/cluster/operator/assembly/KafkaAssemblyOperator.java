@@ -13,11 +13,10 @@ import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.certs.CertManager;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.api.kafka.DoneableKafkaAssembly;
 import io.strimzi.api.kafka.KafkaAssemblyList;
 import io.strimzi.api.kafka.model.KafkaAssembly;
-import io.strimzi.api.kafka.model.Storage;
+import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
@@ -250,10 +249,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete kafka {}", reconciliation, name);
-        StatefulSet ss = kafkaSetOperations.get(namespace, KafkaCluster.kafkaClusterName(name));
-
-        final KafkaCluster kafka = ss == null ? null : KafkaCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = kafka != null && Storage.deleteClaim(kafka.getStorage());
+        String kafkaSsName = KafkaCluster.kafkaClusterName(name);
+        StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
+        boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
         List<Future> result = new ArrayList<>(8 + (deleteClaims ? kafka.getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
@@ -268,9 +266,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         if (deleteClaims) {
             log.debug("{}: delete kafka {} PVCs", reconciliation, name);
 
-            for (int i = 0; i < kafka.getReplicas(); i++) {
+            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
                 result.add(pvcOperations.reconcile(namespace,
-                        kafka.getPersistentVolumeClaimName(i), null));
+                        KafkaCluster.getPersistentVolumeClaimName(kafkaSsName, i), null));
             }
         }
 
@@ -307,21 +305,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String namespace = reconciliation.namespace();
         String name = reconciliation.assemblyName();
         log.debug("{}: delete zookeeper {}", reconciliation, name);
-        StatefulSet ss = zkSetOperations.get(namespace, ZookeeperCluster.zookeeperClusterName(name));
-        ZookeeperCluster zk = ss == null ? null : ZookeeperCluster.fromAssembly(ss, namespace, name);
-        boolean deleteClaims = zk != null && Storage.deleteClaim(zk.getStorage());
-        List<Future> result = new ArrayList<>(4 + (deleteClaims ? zk.getReplicas() : 0));
+        String zkSsName = ZookeeperCluster.zookeeperClusterName(name);
+        StatefulSet ss = zkSetOperations.get(namespace, zkSsName);
+        boolean deleteClaims = ss == null ? false : ZookeeperCluster.deleteClaim(ss);
+        List<Future> result = new ArrayList<>(4 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, ZookeeperCluster.zookeeperMetricsName(name), null));
-        result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+        result.add(serviceOperations.reconcile(namespace, zkSsName, null));
         result.add(serviceOperations.reconcile(namespace, ZookeeperCluster.zookeeperHeadlessName(name), null));
-        result.add(zkSetOperations.reconcile(namespace, ZookeeperCluster.zookeeperClusterName(name), null));
+        result.add(zkSetOperations.reconcile(namespace, zkSsName, null));
 
         if (deleteClaims) {
             log.debug("{}: delete zookeeper {} PVCs", reconciliation, name);
-
-            for (int i = 0; i < zk.getReplicas(); i++) {
-                result.add(pvcOperations.reconcile(namespace, zk.getPersistentVolumeClaimName(i), null));
+            for (int i = 0; i < ss.getSpec().getReplicas(); i++) {
+                result.add(pvcOperations.reconcile(namespace, ZookeeperCluster.getPersistentVolumeClaimName(zkSsName, i), null));
             }
         }
 

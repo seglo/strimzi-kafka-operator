@@ -24,6 +24,7 @@ import java.util.List;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -187,17 +188,25 @@ public class KafkaClusterTest {
         }
     }
 
-    /**
-     * Check that a KafkaCluster from a statefulset matches the one from a ConfigMap
-     */
     @Test
-    public void testClusterFromStatefulSet() {
+    public void testDeleteClaim() {
+        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
+                "{\"type\": \"ephemeral\"}", null, null);
+        KafkaCluster kc = KafkaCluster.fromCrd(cm);
         StatefulSet ss = kc.generateStatefulSet(true);
-        KafkaCluster kc2 = KafkaCluster.fromAssembly(ss, namespace, cluster);
-        // Don't check the metrics CM, since this isn't restored from the StatefulSet
-        checkService(kc2.generateService());
-        checkHeadlessService(kc2.generateHeadlessService());
-        checkStatefulSet(kc2.generateStatefulSet(true), kafkaAssembly, true);
+        assertFalse(KafkaCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null);
+        kc = KafkaCluster.fromCrd(cm);
+        ss = kc.generateStatefulSet(true);
+        assertFalse(KafkaCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null);
+        kc = KafkaCluster.fromCrd(cm);
+        ss = kc.generateStatefulSet(true);
+        assertTrue(KafkaCluster.deleteClaim(ss));
     }
 
     // TODO test volume claim templates

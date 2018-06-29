@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -18,7 +17,6 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Zookeeper;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -138,50 +136,6 @@ public class ZookeeperCluster extends AbstractModel {
         zk.setResources(zookeeper.getResources());
         zk.setJvmOptions(zookeeper.getJvmOptions());
         zk.setUserAffinity(zookeeper.getAffinity());
-        return zk;
-    }
-
-    /**
-     * Create a Zookeeper cluster from the deployed StatefulSet resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @return  Zookeeper cluster instance
-     */
-    public static ZookeeperCluster fromAssembly(StatefulSet ss,
-                                                String namespace, String cluster) {
-        ZookeeperCluster zk =  new ZookeeperCluster(namespace, cluster,
-                Labels.fromResource(ss));
-
-        zk.setReplicas(ss.getSpec().getReplicas());
-        Container container = ss.getSpec().getTemplate().getSpec().getContainers().get(0);
-        zk.setImage(container.getImage());
-        zk.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        zk.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        zk.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_ZOOKEEPER_METRICS_ENABLED, DEFAULT_ZOOKEEPER_METRICS_ENABLED));
-        if (zk.isMetricsEnabled()) {
-            zk.setMetricsConfigName(zookeeperMetricsName(cluster));
-        }
-
-        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()) {
-
-            Storage storage = Storage.fromPersistentVolumeClaim(ss.getSpec().getVolumeClaimTemplates().get(0));
-            if (ss.getMetadata().getAnnotations() != null) {
-                String deleteClaimAnnotation = String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD);
-                storage.withDeleteClaim(Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(deleteClaimAnnotation, s -> "false")));
-            }
-            zk.setStorage(storage);
-        } else {
-            Storage storage = new Storage(Storage.StorageType.EPHEMERAL);
-            zk.setStorage(storage);
-        }
-
-        String zookeeperConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_ZOOKEEPER_CONFIGURATION, "");
-        zk.setConfiguration(new ZookeeperConfiguration(zookeeperConfiguration));
-
         return zk;
     }
 

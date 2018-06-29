@@ -16,6 +16,8 @@ import java.io.IOException;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ZookeeperClusterTest {
 
@@ -115,13 +117,24 @@ public class ZookeeperClusterTest {
      * Check that a ZookeeperCluster from a statefulset matches the one from a ConfigMap
      */
     @Test
-    public void testClusterFromStatefulSet() {
+    public void testDeleteClaim() {
+        KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"ephemeral\"}", null, null);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(cm);
         StatefulSet ss = zc.generateStatefulSet(true);
-        ZookeeperCluster zc2 = ZookeeperCluster.fromAssembly(ss, namespace, cluster);
-        // Don't check the metrics CM, since this isn't restored from the StatefulSet
-        checkService(zc2.generateService());
-        checkHeadlessService(zc2.generateHeadlessService());
-        checkStatefulSet(zc2.generateStatefulSet(true));
+        assertFalse(ZookeeperCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null);
+        zc = ZookeeperCluster.fromCrd(cm);
+        ss = zc.generateStatefulSet(true);
+        assertFalse(ZookeeperCluster.deleteClaim(ss));
+
+        cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null);
+        zc = ZookeeperCluster.fromCrd(cm);
+        ss = zc.generateStatefulSet(true);
+        assertTrue(ZookeeperCluster.deleteClaim(ss));
     }
 
     // TODO test volume claim templates

@@ -22,14 +22,11 @@ import io.fabric8.openshift.api.model.ImageChangeTrigger;
 import io.fabric8.openshift.api.model.ImageLookupPolicyBuilder;
 import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
-import io.fabric8.openshift.api.model.TagImportPolicy;
 import io.fabric8.openshift.api.model.TagImportPolicyBuilder;
 import io.fabric8.openshift.api.model.TagReference;
 import io.fabric8.openshift.api.model.TagReferencePolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblySpec;
-
-import java.util.Map;
 
 public class KafkaConnectS2ICluster extends KafkaConnectCluster {
 
@@ -62,51 +59,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
                 Labels.fromResource(crd)));
         cluster.setInsecureSourceRepository(spec != null ? spec.isInsecureSourceRepository() : false);
         return cluster;
-    }
-
-    /**
-     * Create a Kafka Connect cluster from the deployed Deployment resource
-     *
-     * @param namespace Kubernetes/OpenShift namespace where cluster resources belong to
-     * @param cluster   overall cluster name
-     * @param dep The deployment from which to recover the cluster state
-     * @param sis ImageStream
-     * @return  Kafka Connect cluster instance
-     */
-    public static KafkaConnectS2ICluster fromAssembly(
-            String namespace, String cluster,
-            DeploymentConfig dep,
-            ImageStream sis) {
-
-        KafkaConnectS2ICluster kafkaConnect =  new KafkaConnectS2ICluster(namespace, cluster, Labels.fromResource(dep));
-
-        kafkaConnect.setReplicas(dep.getSpec().getReplicas());
-        Container container = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        kafkaConnect.setHealthCheckInitialDelay(container.getReadinessProbe().getInitialDelaySeconds());
-        kafkaConnect.setHealthCheckTimeout(container.getReadinessProbe().getTimeoutSeconds());
-
-        String connectConfiguration = containerEnvVars(container).getOrDefault(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, "");
-        kafkaConnect.setConfiguration(new KafkaConnectConfiguration(connectConfiguration));
-
-        String sourceImage = sis.getSpec().getTags().get(0).getFrom().getName();
-        kafkaConnect.setImage(sourceImage);
-
-        Map<String, String> vars = containerEnvVars(container);
-
-        kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
-        if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(metricsConfigName(cluster));
-        }
-
-        TagImportPolicy policy = sis.getSpec().getTags().get(0).getImportPolicy();
-        if (policy != null) {
-            Boolean insecure = policy.getInsecure();
-            if (insecure != null) {
-                kafkaConnect.setInsecureSourceRepository(insecure);
-            }
-        }
-
-        return kafkaConnect;
     }
 
     /**

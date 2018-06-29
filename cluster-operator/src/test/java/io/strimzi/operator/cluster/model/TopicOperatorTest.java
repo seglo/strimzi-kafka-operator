@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
@@ -48,8 +47,8 @@ public class TopicOperatorTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson, null);
-    private final TopicOperator tc = TopicOperator.fromConfigMap(cm);
+    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson, null);
+    private final TopicOperator tc = TopicOperator.fromCrd(resource);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -67,8 +66,8 @@ public class TopicOperatorTest {
     @Test
     public void testFromConfigMapNoConfig() {
 
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
-        TopicOperator tc = TopicOperator.fromConfigMap(cm);
+        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
+        TopicOperator tc = TopicOperator.fromCrd(resource);
 
         assertNull(tc);
     }
@@ -76,8 +75,8 @@ public class TopicOperatorTest {
     @Test
     public void testFromConfigMapDefaultConfig() {
 
-        ConfigMap cm = ResourceUtils.createKafkaClusterConfigMap(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }", null);
-        TopicOperator tc = TopicOperator.fromConfigMap(cm);
+        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }", null);
+        TopicOperator tc = TopicOperator.fromCrd(resource);
 
         Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
@@ -108,29 +107,6 @@ public class TopicOperatorTest {
         Assert.assertEquals(TopicOperator.defaultZookeeperConnect(cluster), tc.getZookeeperConnect());
         Assert.assertEquals(TopicOperator.defaultTopicConfigMapLabels(cluster), tc.getTopicConfigMapLabels());
         assertEquals(tcTopicMetadataMaxAttempts, tc.getTopicMetadataMaxAttempts());
-    }
-
-    @Test
-    public void testFromDeployment() {
-
-        TopicOperator tcFromDep = TopicOperator.fromAssembly(namespace, cluster, tc.generateDeployment());
-
-        Assert.assertEquals(tc.namespace, tcFromDep.namespace);
-        Assert.assertEquals(tc.cluster, tcFromDep.cluster);
-        assertEquals(tc.image, tcFromDep.image);
-        Assert.assertEquals(tc.replicas, tcFromDep.replicas);
-        Assert.assertEquals(tc.readinessInitialDelay, tcFromDep.readinessInitialDelay);
-        Assert.assertEquals(tc.readinessTimeout, tcFromDep.readinessTimeout);
-        Assert.assertEquals(tc.livenessInitialDelay, tcFromDep.livenessInitialDelay);
-        Assert.assertEquals(tc.livenessTimeout, tcFromDep.livenessTimeout);
-        assertEquals(tc.getImage(), tcFromDep.getImage());
-        assertEquals(tc.getWatchedNamespace(), tcFromDep.getWatchedNamespace());
-        Assert.assertEquals(tc.getReconciliationIntervalMs(), tcFromDep.getReconciliationIntervalMs());
-        Assert.assertEquals(tc.getZookeeperSessionTimeoutMs(), tcFromDep.getZookeeperSessionTimeoutMs());
-        Assert.assertEquals(tc.getKafkaBootstrapServers(), tcFromDep.getKafkaBootstrapServers());
-        Assert.assertEquals(tc.getZookeeperConnect(), tcFromDep.getZookeeperConnect());
-        Assert.assertEquals(tc.getTopicConfigMapLabels(), tcFromDep.getTopicConfigMapLabels());
-        assertEquals(tc.getTopicMetadataMaxAttempts(), tcFromDep.getTopicMetadataMaxAttempts());
     }
 
     @Test

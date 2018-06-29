@@ -45,11 +45,9 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSetUpdateStrategyBuilder;
-import io.strimzi.api.kafka.model.EphemeralStorage;
-import io.strimzi.api.kafka.model.MemoryDeserializer;
-import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.CpuMemory;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Resources;
 import io.strimzi.operator.cluster.ClusterOperator;
 import org.apache.logging.log4j.LogManager;
@@ -77,6 +75,9 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
     public static final String ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS = "KAFKA_JVM_PERFORMANCE_OPTS";
     public static final String ENV_VAR_DYNAMIC_HEAP_MAX = "DYNAMIC_HEAP_MAX";
+
+    private static final String DELETE_CLAIM_ANNOTATION =
+            ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN + "/delete-claim";
 
     protected final String cluster;
     protected final String namespace;
@@ -232,29 +233,6 @@ public abstract class AbstractModel {
 
     public io.strimzi.api.kafka.model.Storage getStorage() {
         return storage;
-    }
-
-    /**
-     * @deprecated Use {@link #setStorage(io.strimzi.api.kafka.model.Storage)}
-     */
-    @Deprecated
-    protected void setStorage(Storage storage) {
-        switch (storage.type()) {
-            case EPHEMERAL:
-                this.storage = new EphemeralStorage();
-                break;
-            case PERSISTENT_CLAIM:
-                PersistentClaimStorage pcs = new PersistentClaimStorage();
-                pcs.setDeleteClaim(storage.isDeleteClaim());
-                if (storage.selector() != null) {
-                    pcs.setSelector(storage.selector().getMatchLabels());
-                }
-                if (storage.size() != null) {
-                    pcs.setSize(MemoryDeserializer.format(Long.parseLong(storage.size().getAmount())));
-                }
-                pcs.setStorageClass(storage.storageClass());
-                this.storage = pcs;
-        }
     }
 
     protected void setStorage(io.strimzi.api.kafka.model.Storage storage) {
@@ -540,7 +518,7 @@ public abstract class AbstractModel {
 
         Map<String, String> annotations = new HashMap<>();
 
-        annotations.put(String.format("%s/%s", ClusterOperator.STRIMZI_CLUSTER_OPERATOR_DOMAIN, Storage.DELETE_CLAIM_FIELD),
+        annotations.put(DELETE_CLAIM_ANNOTATION,
                 String.valueOf(storage instanceof PersistentClaimStorage
                         && ((PersistentClaimStorage) storage).isDeleteClaim()));
 
@@ -809,6 +787,15 @@ public abstract class AbstractModel {
         String trim = jvmPerformanceOpts.toString().trim();
         if (!trim.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, trim));
+        }
+    }
+
+    public static boolean deleteClaim(StatefulSet ss) {
+        if (!ss.getSpec().getVolumeClaimTemplates().isEmpty()
+                && ss.getMetadata().getAnnotations() != null) {
+            return Boolean.valueOf(ss.getMetadata().getAnnotations().computeIfAbsent(DELETE_CLAIM_ANNOTATION, s -> "false"));
+        } else {
+            return false;
         }
     }
 }

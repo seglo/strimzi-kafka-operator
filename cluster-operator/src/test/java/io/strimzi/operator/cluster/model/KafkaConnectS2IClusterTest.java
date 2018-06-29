@@ -111,35 +111,6 @@ public class KafkaConnectS2IClusterTest {
     }
 
     @Test
-    public void testFromDeployment() {
-        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromAssembly(namespace, cluster, kc.generateDeploymentConfig(), kc.generateSourceImageStream());
-
-        assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
-        assertEquals(replicas, newKc.replicas);
-        assertEquals(image, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
-        assertEquals(healthDelay, newKc.readinessInitialDelay);
-        assertEquals(healthTimeout, newKc.readinessTimeout);
-        assertEquals(healthDelay, newKc.livenessInitialDelay);
-        assertEquals(healthTimeout, newKc.livenessTimeout);
-        assertEquals(expectedConfiguration, kc.getConfiguration().getConfiguration());
-    }
-
-    @Test
-    public void testFromDeploymentWithDefaultValues() {
-        KafkaConnectS2ICluster defaultsKc = KafkaConnectS2ICluster.fromCrd(ResourceUtils.createEmptyKafkaConnectS2ICluster(namespace, cluster));
-        KafkaConnectS2ICluster newKc = KafkaConnectS2ICluster.fromAssembly(namespace, cluster, defaultsKc.generateDeploymentConfig(), defaultsKc.generateSourceImageStream());
-
-        assertEquals(newKc.kafkaConnectClusterName(cluster) + ":latest", newKc.image);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_REPLICAS, newKc.replicas);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_IMAGE, newKc.sourceImageBaseName + ":" + newKc.sourceImageTag);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, newKc.readinessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.readinessTimeout);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_DELAY, newKc.livenessInitialDelay);
-        assertEquals(KafkaConnectS2ICluster.DEFAULT_HEALTHCHECK_TIMEOUT, newKc.livenessTimeout);
-        assertEquals(defaultsKc.getConfiguration().getConfiguration(), newKc.getConfiguration().getConfiguration());
-    }
-
-    @Test
     public void testEnvVars()   {
         assertEquals(getExpectedEnvVars(), kc.getEnvVars());
     }

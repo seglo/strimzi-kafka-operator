@@ -10,15 +10,16 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.JsonUtils;
+import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.Labels;
-import io.strimzi.operator.cluster.model.Storage;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
@@ -35,7 +36,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunnerWithParametersFactory;
@@ -164,7 +164,7 @@ public class KafkaAssemblyOperatorTest {
         this.zooConfig = params.zooConfig;
         this.storage = params.storage;
         this.tcConfig = params.tcConfig;
-        this.deleteClaim = Storage.fromJson(new JsonObject(params.storage)).isDeleteClaim();
+        this.deleteClaim = Storage.deleteClaim(JsonUtils.fromJson(params.storage, Storage.class));
     }
 
     protected static Vertx vertx;

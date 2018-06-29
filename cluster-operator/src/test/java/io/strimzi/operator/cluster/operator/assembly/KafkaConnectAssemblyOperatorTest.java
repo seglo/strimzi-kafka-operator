@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
@@ -515,8 +516,8 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockSecretOps.reconcile(eq(clusterCmNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
-        Set<String> createdOrUpdated = new HashSet<>();
-        Set<String> deleted = new HashSet<>();
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+        Set<String> deleted = new CopyOnWriteArraySet<>();
 
         Async async = context.async(3);
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, true,
