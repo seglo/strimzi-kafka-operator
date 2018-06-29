@@ -42,7 +42,7 @@ public class Kafka extends ReplicatedJvmPods {
 
 
     public Kafka() {
-        this.image = DEFAULT_IMAGE;
+        this.setImage(DEFAULT_IMAGE);
     }
 
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)

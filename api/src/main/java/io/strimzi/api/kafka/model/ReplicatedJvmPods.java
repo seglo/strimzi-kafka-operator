@@ -26,21 +26,21 @@ import java.util.Map;
 )
 public abstract class ReplicatedJvmPods {
 
-    protected int replicas;
+    private int replicas;
 
-    protected String image;
+    private String image;
 
-    protected Resources resources;
+    private Resources resources;
 
-    protected Probe livenessProbe;
+    private Probe livenessProbe;
 
-    protected Probe readinessProbe;
+    private Probe readinessProbe;
 
-    protected JvmOptions jvmOptions;
+    private JvmOptions jvmOptions;
 
-    protected Map<String, Object> metrics = new HashMap<>(0);
+    private Map<String, Object> metrics = new HashMap<>(0);
 
-    protected Affinity affinity;
+    private Affinity affinity;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 

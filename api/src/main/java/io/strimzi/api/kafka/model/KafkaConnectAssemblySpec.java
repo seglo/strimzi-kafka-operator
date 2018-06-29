@@ -23,15 +23,15 @@ import java.util.Map;
 public class KafkaConnectAssemblySpec extends ReplicatedJvmPods {
 
     public static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_IMAGE", "strimzi/kafka-connect:latest");
+            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_IMAGE", "strimzi/kafka-connect:latest");
 
     public static final String FORBIDDEN_PREFIXES = "ssl., sasl., security., listeners, plugin.path, rest.";
 
     private Map<String, Object> config = new HashMap<>(0);
 
     public KafkaConnectAssemblySpec() {
-        this.image = DEFAULT_IMAGE;
-        this.replicas = 3;
+        this.setImage(DEFAULT_IMAGE);
+        this.setReplicas(3);
     }
 
     @Override

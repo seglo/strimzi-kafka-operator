@@ -95,10 +95,16 @@ public class ClusterOperator extends AbstractVerticle {
             })
             .compose(w -> {
                 watchByKind.put("KafkaConnect", w);
-                // TODO only on OS
-                return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
+                if (kafkaConnectS2IAssemblyOperator != null) {
+                    // only on OS
+                    return kafkaConnectS2IAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectS2IAssemblyOperator));
+                } else {
+                    return Future.succeededFuture(null);
+                }
             }).compose(w -> {
-                watchByKind.put("KafkaS2IConnect", w);
+                if (w != null) {
+                    watchByKind.put("KafkaS2IConnect", w);
+                }
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
                 this.reconcileTimer = vertx.setPeriodic(this.reconciliationInterval, res2 -> {
                     log.info("Triggering periodic reconciliation for namespace {}...", namespace);

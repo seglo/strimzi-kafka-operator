@@ -16,14 +16,6 @@ import io.sundr.builder.annotations.Buildable;
         "livenessProbe", "readinessProbe", "jvmOptions", "affinity", "metrics"})
 public class KafkaConnectS2IAssemblySpec extends KafkaConnectAssemblySpec {
 
-    protected static final String DEFAULT_IMAGE =
-            System.getenv().getOrDefault("STRIMZI_DEFAULT_KAFKA_CONNECT_S2I_IMAGE", "strimzi/kafka-connect-s2i:latest");
-
-    public KafkaConnectS2IAssemblySpec() {
-        super();
-        this.image = DEFAULT_IMAGE;
-    }
-
     private boolean insecureSourceRepository = false;
 
     public boolean isInsecureSourceRepository() {

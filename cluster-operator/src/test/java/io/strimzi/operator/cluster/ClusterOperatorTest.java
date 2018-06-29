@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -46,13 +48,23 @@ public class ClusterOperatorTest {
     }
 
     @Test
-    public void startStopSingleNamespace(TestContext context) {
-        startStop(context, "namespace");
+    public void startStopSingleNamespaceOs(TestContext context) {
+        startStop(context, "namespace", true);
     }
 
     @Test
-    public void startStopMultiNamespace(TestContext context) {
-        startStop(context, "namespace1, namespace2");
+    public void startStopMultiNamespaceOs(TestContext context) {
+        startStop(context, "namespace1, namespace2", true);
+    }
+
+    @Test
+    public void startStopSingleNamespaceK8s(TestContext context) {
+        startStop(context, "namespace", false);
+    }
+
+    @Test
+    public void startStopMultiNamespaceK8s(TestContext context) {
+        startStop(context, "namespace1, namespace2", false);
     }
 
     /**
@@ -60,12 +72,21 @@ public class ClusterOperatorTest {
      * @param context
      * @param namespaces
      */
-    private void startStop(TestContext context, String namespaces) {
+    private void startStop(TestContext context, String namespaces, boolean openShift) {
         AtomicInteger numWatchers = new AtomicInteger(0);
-        KubernetesClient client = mock(KubernetesClient.class);
+        KubernetesClient client;
+        if (openShift) {
+            client = mock(OpenShiftClient.class);
+            when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(true);
+            when(client.adapt(eq(OpenShiftClient.class))).thenReturn((OpenShiftClient) client);
+        } else {
+            client = mock(KubernetesClient.class);
+            when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
+        }
         MixedOperation mockCms = mock(MixedOperation.class);
-        when(client.configMaps()).thenReturn(mockCms);
+        //when(client.configMaps()).thenReturn(mockCms);
         when(client.customResources(any(), any(), any(), any())).thenReturn(mockCms);
+
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
 
@@ -89,7 +110,7 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_CONFIGMAP_LABELS, STRIMZI_IO_KIND_CLUSTER);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
-        Main.run(vertx, client, true, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
+        Main.run(vertx, client, openShift, ClusterOperatorConfig.fromMap(env)).setHandler(ar -> {
             context.assertNull(ar.cause(), "Expected all verticles to start OK");
             async.complete();
         });
@@ -111,7 +132,7 @@ public class ClusterOperatorTest {
             async2.await();
         }
 
-        if (numWatchers.get() > 2 * namespaceList.size()) {
+        if (numWatchers.get() > (openShift ? 3 : 2) * namespaceList.size()) {
             context.fail("Looks like there were more watchers than namespaces");
         }
     }

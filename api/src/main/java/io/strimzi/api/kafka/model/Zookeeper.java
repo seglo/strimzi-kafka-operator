@@ -35,8 +35,8 @@ public class Zookeeper extends ReplicatedJvmPods {
     private Map<String, Object> config = new HashMap<>(0);
 
     public Zookeeper() {
-        this.image = DEFAULT_IMAGE;
-        this.replicas = DEFAULT_REPLICAS;
+        this.setImage(DEFAULT_IMAGE);
+        this.setReplicas(DEFAULT_REPLICAS);
     }
 
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
