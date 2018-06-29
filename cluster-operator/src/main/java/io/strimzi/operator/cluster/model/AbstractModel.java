@@ -146,26 +146,6 @@ public abstract class AbstractModel {
         this.image = image;
     }
 
-    /**
-     * Use explicit liveness and readiness setters
-     * @param healthCheckTimeout
-     */
-    @Deprecated
-    protected void setHealthCheckTimeout(int healthCheckTimeout) {
-        this.readinessTimeout = healthCheckTimeout;
-        this.livenessTimeout = healthCheckTimeout;
-    }
-
-    /**
-     * Use explicit liveness and readiness setters
-     * @param healthCheckInitialDelay
-     */
-    @Deprecated
-    protected void setHealthCheckInitialDelay(int healthCheckInitialDelay) {
-        this.readinessInitialDelay = healthCheckInitialDelay;
-        this.livenessInitialDelay = healthCheckInitialDelay;
-    }
-
     protected void setReadinessTimeout(int readinessTimeout) {
         this.readinessTimeout = readinessTimeout;
     }

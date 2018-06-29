@@ -6,13 +6,11 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.OmitFromSchema;
 import io.sundr.builder.annotations.Buildable;
 
 import java.util.HashMap;
@@ -71,18 +69,6 @@ public class TopicOperator {
         this.image = image;
     }
 
-    @Deprecated
-    public String getReconciliationInterval() {
-        return reconciliationIntervalSeconds;
-    }
-
-    @Deprecated
-    @OmitFromSchema
-    @JsonIgnore
-    public void setReconciliationInterval(String reconciliationIntervalSeconds) {
-        this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
-    }
-
     @Description("Interval between periodic reconciliations.")
     public String getReconciliationIntervalSeconds() {
         return reconciliationIntervalSeconds;
@@ -90,18 +76,6 @@ public class TopicOperator {
 
     public void setReconciliationIntervalSeconds(String reconciliationIntervalSeconds) {
         this.reconciliationIntervalSeconds = reconciliationIntervalSeconds;
-    }
-
-    @Deprecated
-    @OmitFromSchema
-    @JsonIgnore
-    public String getZookeeperSessionTimeout() {
-        return zookeeperSessionTimeoutSeconds;
-    }
-
-    @Deprecated
-    public void setZookeeperSessionTimeout(String zookeeperSessionTimeoutSeconds) {
-        this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
 
     @Description("Timeout for the Zookeeper session")

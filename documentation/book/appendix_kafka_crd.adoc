@@ -259,7 +259,5 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |integer
 |additionalProperties            1.2+<.<|
 |map
-|reconciliationInterval          1.2+<.<|
-|string
 |====
 

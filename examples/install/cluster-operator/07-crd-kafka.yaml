@@ -1052,9 +1052,6 @@ spec:
                   description: The number of attempts at getting topic metadata
                 additionalProperties:
                   type: object
-                reconciliationInterval:
-                  type: string
-                  deprecated: true
             additionalProperties:
               type: object
           required:
