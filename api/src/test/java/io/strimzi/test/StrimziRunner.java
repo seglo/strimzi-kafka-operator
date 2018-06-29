@@ -613,11 +613,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterOperator(testClass, statement);
+            statement = withDump(statement);
             statement = withResources(testClass, statement);
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
             statement = withLogging(testClass, statement);
-            statement = withDump(statement);
         }
         return statement;
     }
