@@ -38,7 +38,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -464,7 +466,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                     Statement statement) {
         Statement last = statement;
         for (ClusterOperator cc : annotations(element, ClusterOperator.class)) {
-            List<String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().map(f -> getContent(f, node -> {
+            Map<File, String> yamls = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted().collect(Collectors.toMap(file -> file, f -> getContent(f, node -> {
                 // Change the docker org of the images in the 04-deployment.yaml
                 if ("08-deployment.yaml".equals(f.getName())) {
                     String dockerOrg = System.getenv().getOrDefault("DOCKER_ORG", "strimzi");
@@ -511,14 +513,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     subject.put("kind", "ServiceAccount").put("name", "strimzi-kafka").put("namespace", ns);
                     subjects.set(0, subject);
                 }
-            })).collect(Collectors.toList());
+            }), (x, y) -> x, LinkedHashMap::new));
             last = new Bracket(last) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
-                    for (String yaml: yamls) {
-                        kubeClient().clientWithAdmin().createContent(yaml);
+                    for (Map.Entry<File, String> entry: yamls.entrySet()) {
+                        LOGGER.info("creating possible modified version of {}", entry.getKey());
+                        kubeClient().clientWithAdmin().createContent(entry.getValue());
                     }
                     kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
                 }
@@ -526,8 +529,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
-                    for (int i = yamls.size() - 1; i >= 0; i--) {
-                        kubeClient().clientWithAdmin().deleteContent(yamls.get(i));
+                    ArrayList<String> orderedValues = new ArrayList<>(yamls.values());
+                    for (int i = orderedValues.size() - 1; i >= 0; i--) {
+                        kubeClient().clientWithAdmin().deleteContent(orderedValues.get(i));
                     }
                     kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
                 }

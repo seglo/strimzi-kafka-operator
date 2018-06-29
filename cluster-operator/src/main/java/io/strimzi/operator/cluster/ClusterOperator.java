@@ -57,7 +57,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator) {
         log.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
-        this.selector = Labels.forKind("cluster");
+        this.selector = Labels.EMPTY;
         this.reconciliationInterval = reconciliationInterval;
         this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
@@ -90,10 +90,12 @@ public class ClusterOperator extends AbstractVerticle {
 
         kafkaAssemblyOperator.createWatch(namespace, recreateWatch(kafkaAssemblyOperator))
             .compose(w -> {
+                log.info("Started operator for {} kind", "Kafka");
                 watchByKind.put("Kafka", w);
                 return kafkaConnectAssemblyOperator.createWatch(namespace, recreateWatch(kafkaConnectAssemblyOperator));
             })
             .compose(w -> {
+                log.info("Started operator for {} kind", "KafkaConnect");
                 watchByKind.put("KafkaConnect", w);
                 if (kafkaConnectS2IAssemblyOperator != null) {
                     // only on OS
@@ -103,6 +105,7 @@ public class ClusterOperator extends AbstractVerticle {
                 }
             }).compose(w -> {
                 if (w != null) {
+                    log.info("Started operator for {} kind", "KafkaConnectS2I");
                     watchByKind.put("KafkaS2IConnect", w);
                 }
                 log.info("Setting up periodical reconciliation for namespace {}", namespace);
