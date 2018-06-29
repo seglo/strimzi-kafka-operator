@@ -42,6 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.indent;
@@ -201,8 +202,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     abstract class Bracket extends Statement implements Runnable {
         private final Statement statement;
         private final Thread hook = new Thread(this);
-        public Bracket(Statement statement) {
+        private final Supplier<Consumer<? super Throwable>> onError;
+
+        public Bracket(Statement statement, Supplier<Consumer<? super Throwable>> onError) {
             this.statement = statement;
+            this.onError = onError;
         }
         @Override
         public void evaluate() throws Throwable {
@@ -214,10 +218,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 statement.evaluate();
             } catch (Throwable e) {
                 thrown = e;
-                try {
-                    onError(e);
-                } catch (Throwable t) {
-                    thrown.addSuppressed(t);
+                if (onError != null) {
+                    try {
+                        onError.get().accept(e);
+                    } catch (Throwable t) {
+                        thrown.addSuppressed(t);
+                    }
                 }
             } finally {
                 try {
@@ -302,7 +308,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     }
 
     private Statement withDump(Statement statement) {
-        return new Bracket(statement) {
+        return new Bracket(statement, null) {
             @Override
             protected void before() {
             }
@@ -333,6 +339,130 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         head.addAll(tail);
         return head;
     }
+
+    class ResourceName {
+        public final String kind;
+        public final String name;
+
+        public ResourceName(String kind, String name) {
+            this.kind = kind;
+            this.name = name;
+        }
+    }
+
+    class ResourceMatcher implements Supplier<List<ResourceName>> {
+        public final String kind;
+        public final String namePattern;
+
+        public ResourceMatcher(String kind, String namePattern) {
+            this.kind = kind;
+            this.namePattern = namePattern;
+        }
+
+        @Override
+        public List<ResourceName> get() {
+            return kubeClient().list(kind).stream()
+                    .filter(name -> name.matches(namePattern))
+                    .map(name -> new ResourceName(kind, name))
+                    .collect(Collectors.toList());
+        }
+    }
+
+
+    class DumpLogsErrorAction implements Consumer<Throwable> {
+
+        private final Supplier<List<ResourceName>> podNameSupplier;
+
+        public DumpLogsErrorAction(Supplier<List<ResourceName>> podNameSupplier) {
+            this.podNameSupplier = podNameSupplier;
+        }
+
+        @Override
+        public void accept(Throwable t) {
+            for (ResourceName pod : podNameSupplier.get()) {
+                if (pod.kind.equals("pod") || pod.kind.equals("pods") || pod.kind.equals("po")) {
+                    LOGGER.info("Logs from pod {}:{}{}", pod.name, System.lineSeparator(), indent(kubeClient().logs(pod.name)));
+                }
+            }
+        }
+    }
+
+    class DescribeErrorAction implements Consumer<Throwable> {
+
+        private final Supplier<List<ResourceName>> resources;
+
+        public DescribeErrorAction(Supplier<List<ResourceName>> resources) {
+            this.resources = resources;
+        }
+
+        @Override
+        public void accept(Throwable t) {
+            for (ResourceName resource : resources.get()) {
+                LOGGER.info("Description of {} '{}':{}{}", resource.kind, resource.name,
+                        System.lineSeparator(), indent(kubeClient().getResourceAsYaml(resource.kind, resource.name)));
+            }
+        }
+    }
+
+    class ResourceAction<T extends ResourceAction<T>> implements Supplier<Consumer<Throwable>> {
+
+        protected List<Consumer<Throwable>> list = new ArrayList<>();
+
+        public ResourceAction getResources(ResourceMatcher resources) {
+            list.add(new DescribeErrorAction(resources));
+            return this;
+        }
+
+        public ResourceAction getResources(String kind, String pattern) {
+            return getResources(new ResourceMatcher(kind, pattern));
+        }
+
+        public ResourceAction getPo() {
+            return getPo(".*");
+        }
+
+        public ResourceAction getPo(String pattern) {
+            return getResources(new ResourceMatcher("pod", pattern));
+        }
+
+        public ResourceAction getDep() {
+            return getDep(".*");
+        }
+
+        public ResourceAction getDep(String pattern) {
+            return getResources(new ResourceMatcher("deployment", pattern));
+        }
+
+        public ResourceAction getSs() {
+            return getSs(".*");
+        }
+
+        public ResourceAction getSs(String pattern) {
+            return getResources(new ResourceMatcher("statefulset", pattern));
+        }
+
+        public ResourceAction logs(String pattern) {
+            list.add(new DumpLogsErrorAction(new ResourceMatcher("pod", pattern)));
+            return this;
+        }
+
+        /**
+         * Gets a result.
+         *
+         * @return a result
+         */
+        @Override
+        public Consumer<Throwable> get() {
+            return t -> {
+                for (Consumer<Throwable> x : list) {
+                    x.accept(t);
+                }
+            };
+        }
+    }
+
+
+
 
     private void logState(Throwable t) {
         LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
@@ -372,8 +502,11 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     ((ObjectNode) data).put(cmData.key(), cmData.value());
                 }
             });
-            last = new Bracket(last) {
-                private final String deploymentName = cluster.name() + "-connect";
+            final String deploymentName = cluster.name() + "-connect";
+            last = new Bracket(last, new ResourceAction()
+                    .getDep(deploymentName)
+                    .getPo(deploymentName + ".*")
+                    .logs(deploymentName + ".*")) {
                 @Override
                 protected void before() {
                     LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
@@ -397,7 +530,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     }
 
     private Statement withKafkaClusters(Annotatable element,
-                                    Statement statement) {
+                                        Statement statement) {
         Statement last = statement;
         KafkaFromClasspathYaml cluster = element.getAnnotation(KafkaFromClasspathYaml.class);
         if (cluster != null) {
@@ -406,11 +539,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 // use the example kafka-ephemeral as a template, but modify it according to the annotation
                 String yaml = TestUtils.readResource(testClass(element), resource);
                 KafkaAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaAssembly.class);
-                last = new Bracket(last) {
-                    private final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
-                    private final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
-                    //private final String zkStatefulSetName = cluster.name() + "-zookeeper";
-                    private final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
+                final String kafkaStatefulSetName = kafkaAssembly.getMetadata().getName() + "-kafka";
+                final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
+                final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
+                last = new Bracket(last, new ResourceAction()
+                    .getSs(kafkaStatefulSetName)
+                    .logs(kafkaStatefulSetName + ".*")
+                    .getSs(zookeeperStatefulSetName)
+                    .logs(zookeeperStatefulSetName + ".*")
+                    .getDep(tcDeploymentName)
+                    .logs(tcDeploymentName + ".*")) {
 
                     @Override
                     protected void before() {
@@ -516,7 +654,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     subjects.set(0, subject);
                 }
             }), (x, y) -> x, LinkedHashMap::new));
-            last = new Bracket(last) {
+            last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
+                    .logs(CO_DEPLOYMENT_NAME + ".*")
+                    .getDep(CO_DEPLOYMENT_NAME)) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
@@ -546,7 +686,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                     Statement statement) {
         Statement last = statement;
         for (Resources resources : annotations(element, Resources.class)) {
-            last = new Bracket(last) {
+            last = new Bracket(last, null) {
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
@@ -578,7 +718,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                                      Statement statement) {
         Statement last = statement;
         for (Namespace namespace : annotations(element, Namespace.class)) {
-            last = new Bracket(last) {
+            last = new Bracket(last, null) {
                 String previousNamespace = null;
                 @Override
                 protected void before() {
@@ -661,7 +801,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             ((ObjectNode) data).put("partitions", topic.partitions());
             ((ObjectNode) data).put("replicas", topic.replicas());
             String configMap = node.toString();
-            last = new Bracket(last) {
+            last = new Bracket(last, null) {
                 @Override
                 protected void before() {
                     LOGGER.info("Creating Topic {} {}", topic.name(), name(element));
@@ -683,7 +823,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
 
     private Statement withLogging(Annotatable element, Statement statement) {
-        return new Bracket(statement) {
+        return new Bracket(statement, null) {
             private long t0;
             @Override
             protected void before() {
