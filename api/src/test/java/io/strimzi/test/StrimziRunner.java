@@ -152,7 +152,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
-        Statement statement = withDump(super.methodBlock(method));
+        Statement statement = super.methodBlock(method);
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterOperator(method, statement);
@@ -160,7 +160,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
         statement = withLogging(method, statement);
-        return statement;
+        return withDump(statement);
     }
 
     /**
@@ -617,6 +617,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
             statement = withLogging(testClass, statement);
+            statement = withDump(statement);
         }
         return statement;
     }
@@ -686,10 +687,12 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             protected void before() {
                 t0 = System.currentTimeMillis();
                 LOGGER.info("Starting {}", name(element));
+                System.out.println("travis_fold:start:" + name(element));
             }
 
             @Override
             protected void after() {
+                System.out.println("travis_fold:end:" + name(element));
                 LOGGER.info("Finished {}: took {}",
                         name(element),
                         duration(System.currentTimeMillis() - t0));
