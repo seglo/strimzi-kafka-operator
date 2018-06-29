@@ -338,16 +338,16 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         for (String pod : ccFirst(kubeClient().list("pod"))) {
             LOGGER.info("Logs from pod {}:{}{}", pod, System.lineSeparator(), indent(kubeClient().logs(pod)));
         }
-        for (String resourceType : asList("pod", "deployment", "statefulset", "kafka")) {
+        asList("pod", "deployment", "statefulset", "kafka", "kafkaconnect", "kafkaconnects2i").stream().forEach(resourceType -> {
             try {
-                for (String resourceName : ccFirst(kubeClient().list(resourceType))) {
+                for (String resourceName : kubeClient().list(resourceType)) {
                     LOGGER.info("Description of {} '{}':{}{}", resourceType, resourceName,
                             System.lineSeparator(), indent(kubeClient().getResourceAsJson(resourceType, resourceName)));
                 }
             } catch (KubeClusterException e) {
                 t.addSuppressed(e);
             }
-        }
+        });
 
         LOGGER.info("That's all the diagnostic info, the exception {} will now propagate and the test will fail{}{}",
                 t,
