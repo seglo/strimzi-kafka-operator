@@ -27,3 +27,4 @@ spec:
       timeoutSeconds: 5
     storage:
       type: ephemeral
+  topicOperator: {}

@@ -252,7 +252,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String kafkaSsName = KafkaCluster.kafkaClusterName(name);
         StatefulSet ss = kafkaSetOperations.get(namespace, kafkaSsName);
         boolean deleteClaims = ss == null ? false : KafkaCluster.deleteClaim(ss);
-        List<Future> result = new ArrayList<>(8 + (deleteClaims ? kafka.getReplicas() : 0));
+        List<Future> result = new ArrayList<>(8 + (deleteClaims ? ss.getSpec().getReplicas() : 0));
 
         result.add(configMapOperations.reconcile(namespace, KafkaCluster.metricConfigsName(name), null));
         result.add(serviceOperations.reconcile(namespace, KafkaCluster.kafkaClusterName(name), null));

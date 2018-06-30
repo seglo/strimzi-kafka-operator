@@ -19,6 +19,7 @@ import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -204,6 +205,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
+    @Ignore
     @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml()
     public void testCustomAndUpdatedValues() {
