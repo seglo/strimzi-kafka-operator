@@ -7,9 +7,9 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
+import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
@@ -19,7 +19,6 @@ import io.strimzi.test.k8s.Oc;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -205,7 +204,6 @@ public class KafkaClusterIT extends AbstractClusterIT {
     }
 
     @Test
-    @Ignore
     @JUnitGroup(name = "regression")
     @KafkaFromClasspathYaml()
     public void testCustomAndUpdatedValues() {

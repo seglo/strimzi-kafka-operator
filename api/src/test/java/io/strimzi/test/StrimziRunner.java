@@ -154,6 +154,17 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
+        statement = new Bracket(statement, () -> e -> {
+            LOGGER.info("Test {} failed, due to {}", method.getName(), e, e);
+        }) {
+            @Override
+            protected void before() {
+            }
+
+            @Override
+            protected void after() {
+            }
+        };
         statement = withConnectClusters(method, statement);
         statement = withKafkaClusters(method, statement);
         statement = withClusterOperator(method, statement);
@@ -161,7 +172,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         statement = withTopic(method, statement);
         statement = withNamespaces(method, statement);
         statement = withLogging(method, statement);
-        return withDump(statement);
+        return statement;
     }
 
     /**
@@ -249,10 +260,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         /** Runs after the test, even it if failed or the JVM can killed */
         protected abstract void after();
 
-        protected void onError(Throwable t) {
-            logState(t);
-        }
-
         @Override
         public void run() {
             runAfter();
@@ -305,25 +312,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private Statement withDump(Statement statement) {
-        return new Bracket(statement, null) {
-            @Override
-            protected void before() {
-            }
-
-            @Override
-            protected void after() {
-            }
-
-            @Override
-            protected void onError(Throwable t) {
-                logState(t);
-            }
-
-
-        };
     }
 
     private List<String> ccFirst(List<String> l) {
@@ -461,9 +449,6 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         }
     }
 
-
-
-
     private void logState(Throwable t) {
         LOGGER.info("The test is failing/erroring due to {}, here's some diagnostic output{}{}",
                 t, System.lineSeparator(), "----------------------------------------------------------------------");
@@ -555,19 +540,15 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         LOGGER.info("Creating kafka cluster '{}' before test per @KafkaCluster annotation on {}", kafkaAssembly.getMetadata().getName(), name(element));
                         // create cm
                         kubeClient().createContent(yaml);
-                        try {
-                            // wait for ss
-                            LOGGER.info("Waiting for Zookeeper SS");
-                            kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
-                            // wait for ss
-                            LOGGER.info("Waiting for Kafka SS");
-                            kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
-                            // wait for TOs
-                            LOGGER.info("Waiting for TC Deployment");
-                            kubeClient().waitForDeployment(tcDeploymentName);
-                        } catch (TimeoutException e) {
-                            logState(e);
-                        }
+                        // wait for ss
+                        LOGGER.info("Waiting for Zookeeper SS");
+                        kubeClient().waitForStatefulSet(zookeeperStatefulSetName, kafkaAssembly.getSpec().getZookeeper().getReplicas());
+                        // wait for ss
+                        LOGGER.info("Waiting for Kafka SS");
+                        kubeClient().waitForStatefulSet(kafkaStatefulSetName, kafkaAssembly.getSpec().getKafka().getReplicas());
+                        // wait for TOs
+                        LOGGER.info("Waiting for TC Deployment");
+                        kubeClient().waitForDeployment(tcDeploymentName);
                     }
 
                     @Override
@@ -576,12 +557,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                         // delete cm
                         kubeClient().deleteContent(yaml);
                         // wait for ss to go
-                        try {
-                            kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
-                        } catch (Exception e) {
-                            LOGGER.info("Exception {} while cleaning up. ", e.toString());
-                            onError(e);
-                        }
+                        kubeClient().waitForResourceDeletion("statefulset", kafkaStatefulSetName);
                     }
                 };
             }
@@ -753,10 +729,20 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
         Statement statement = super.classBlock(notifier);
         TestClass testClass = getTestClass();
         if (!areAllChildrenIgnored()) {
+            statement = new Bracket(statement, () -> e -> {
+                LOGGER.info("Failed to set up test class {}, due to {}", testClass.getName(), e, e);
+            }) {
+                @Override
+                protected void before() {
+                }
+
+                @Override
+                protected void after() {
+                }
+            };
             statement = withConnectClusters(testClass, statement);
             statement = withKafkaClusters(testClass, statement);
             statement = withClusterOperator(testClass, statement);
-            statement = withDump(statement);
             statement = withResources(testClass, statement);
             statement = withTopic(testClass, statement);
             statement = withNamespaces(testClass, statement);
