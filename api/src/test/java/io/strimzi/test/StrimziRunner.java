@@ -529,8 +529,10 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
                     .getSs(kafkaStatefulSetName)
+                    .getPo(kafkaStatefulSetName + ".*")
                     .logs(kafkaStatefulSetName + ".*")
                     .getSs(zookeeperStatefulSetName)
+                    .getPo(zookeeperStatefulSetName)
                     .logs(zookeeperStatefulSetName + ".*")
                     .getDep(tcDeploymentName)
                     .logs(tcDeploymentName + ".*")) {
