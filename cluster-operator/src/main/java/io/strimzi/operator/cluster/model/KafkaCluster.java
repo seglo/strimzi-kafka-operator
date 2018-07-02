@@ -25,7 +25,7 @@ import io.strimzi.api.kafka.model.EphemeralStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.RackConfig;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
@@ -73,7 +73,7 @@ public class KafkaCluster extends AbstractModel {
 
     // Kafka configuration
     private String zookeeperConnect = DEFAULT_KAFKA_ZOOKEEPER_CONNECT;
-    private RackConfig rackConfig;
+    private Rack rack;
     private String initImage;
 
     // Configuration defaults
@@ -185,7 +185,7 @@ public class KafkaCluster extends AbstractModel {
             result.setLivenessInitialDelay(kafka.getLivenessProbe().getInitialDelaySeconds());
             result.setLivenessTimeout(kafka.getLivenessProbe().getTimeoutSeconds());
         }
-        result.setRackConfig(kafka.getRackConfig());
+        result.setRack(kafka.getRack());
         result.setInitImage(kafka.getBrokerRackInitImage());
         result.setJvmOptions(kafka.getJvmOptions());
         result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
@@ -509,7 +509,7 @@ public class KafkaCluster extends AbstractModel {
         if (isMetricsEnabled) {
             volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
         }
-        if (rackConfig != null) {
+        if (rack != null) {
             volumeList.add(createEmptyDirVolume(RACK_VOLUME_NAME));
         }
         volumeList.add(createSecretVolume("internal-certs", KafkaCluster.brokersInternalSecretName(cluster)));
@@ -532,7 +532,7 @@ public class KafkaCluster extends AbstractModel {
         if (isMetricsEnabled) {
             volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
         }
-        if (rackConfig != null) {
+        if (rack != null) {
             volumeMountList.add(createVolumeMount(RACK_VOLUME_NAME, RACK_VOLUME_MOUNT));
         }
         volumeMountList.add(createVolumeMount("internal-certs", "/opt/kafka/internal-certs"));
@@ -548,14 +548,14 @@ public class KafkaCluster extends AbstractModel {
     protected Affinity getMergedAffinity() {
         Affinity userAffinity = getUserAffinity();
         AffinityBuilder builder = new AffinityBuilder(userAffinity == null ? new Affinity() : userAffinity);
-        if (rackConfig != null) {
+        if (rack != null) {
             // If there's a rack config, we need to add a podAntiAffinity to spread the brokers among the racks
             builder = builder
                     .editOrNewPodAntiAffinity()
                         .addNewPreferredDuringSchedulingIgnoredDuringExecution()
                             .withWeight(100)
                             .withNewPodAffinityTerm()
-                                .withTopologyKey(rackConfig.getTopologyKey())
+                                .withTopologyKey(rack.getTopologyKey())
                                 .withNewLabelSelector()
                                     .addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, cluster)
                                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, name)
@@ -572,7 +572,7 @@ public class KafkaCluster extends AbstractModel {
 
         List<Container> initContainers = new ArrayList<>();
 
-        if (rackConfig != null) {
+        if (rack != null) {
 
             ResourceRequirements resources = new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
@@ -583,7 +583,7 @@ public class KafkaCluster extends AbstractModel {
 
             List<EnvVar> varList =
                     Arrays.asList(buildEnvVarFromFieldRef(ENV_VAR_INIT_KAFKA_NODE_NAME, "spec.nodeName"),
-                            buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rackConfig.getTopologyKey()));
+                            buildEnvVar(ENV_VAR_INIT_KAFKA_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
@@ -623,8 +623,8 @@ public class KafkaCluster extends AbstractModel {
         this.zookeeperConnect = zookeeperConnect;
     }
 
-    protected void setRackConfig(RackConfig rackConfig) {
-        this.rackConfig = rackConfig;
+    protected void setRack(Rack rack) {
+        this.rack = rack;
     }
 
     protected void setInitImage(String initImage) {

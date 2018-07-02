@@ -42,5 +42,6 @@ public abstract class AbstractCrdTest<R extends HasMetadata> {
         ObjectMeta metadata = model.getMetadata();
         assertNotNull(metadata);
         assertDesiredResource(model, crdClass.getSimpleName() + ".out.yaml");
+        assertDesiredResource(TestUtils.fromYamlString(TestUtils.toYamlString(model), crdClass), crdClass.getSimpleName() + ".out.yaml");
     }
 }

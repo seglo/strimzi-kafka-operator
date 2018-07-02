@@ -21,7 +21,7 @@ import io.strimzi.api.kafka.model.KafkaConnectAssemblyBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssemblyBuilder;
 import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.RackConfig;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.Storage;
 import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.operator.cluster.model.AssemblyType;
@@ -303,7 +303,7 @@ public class ResourceUtils {
                 kafka.setConfig(om.readValue(kafkaConfigurationJson, typeRef));
             }
             kafka.setStorage(JsonUtils.fromJson(storageJson, Storage.class));
-            kafka.setRackConfig(RackConfig.fromJson(rackJson));
+            kafka.setRack(Rack.fromJson(rackJson));
             spec.setKafka(kafka);
 
             Zookeeper zk = new Zookeeper();

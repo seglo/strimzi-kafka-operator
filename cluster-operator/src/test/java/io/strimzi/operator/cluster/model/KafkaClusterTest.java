@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.RackConfig;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.assembly.MockCertManager;
@@ -160,9 +160,9 @@ public class KafkaClusterTest {
             }
         }
 
-        if (cm.getSpec().getKafka().getRackConfig() != null) {
+        if (cm.getSpec().getKafka().getRack() != null) {
 
-            RackConfig rackConfig = cm.getSpec().getKafka().getRackConfig();
+            Rack rack = cm.getSpec().getKafka().getRack();
 
             // check that the pod spec contains anti-affinity rules with the right topology key
             PodSpec podSpec = ss.getSpec().getTemplate().getSpec();
@@ -174,7 +174,7 @@ public class KafkaClusterTest {
             assertTrue(terms.size() > 0);
 
             boolean isTopologyKey =
-                    terms.stream().anyMatch(term -> term.getPodAffinityTerm().getTopologyKey().equals(rackConfig.getTopologyKey()));
+                    terms.stream().anyMatch(term -> term.getPodAffinityTerm().getTopologyKey().equals(rack.getTopologyKey()));
             assertTrue(isTopologyKey);
 
             // check that pod spec contains the init Kafka container

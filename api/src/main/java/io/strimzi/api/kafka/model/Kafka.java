@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -38,7 +39,7 @@ public class Kafka extends ReplicatedJvmPods {
 
     private String brokerRackInitImage = DEFAULT_INIT_IMAGE;
 
-    private RackConfig rackConfig;
+    private Rack rack;
 
 
     public Kafka() {
@@ -65,12 +66,13 @@ public class Kafka extends ReplicatedJvmPods {
 
     @Description("Configuration of the `broker.rack` broker config.")
     @JsonProperty("rack")
-    public RackConfig getRackConfig() {
-        return rackConfig;
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Rack getRack() {
+        return rack;
     }
 
-    public void setRackConfig(RackConfig rackConfig) {
-        this.rackConfig = rackConfig;
+    public void setRack(Rack rack) {
+        this.rack = rack;
     }
 
     @Description("Storage configuration (disk). Cannot be updated.")

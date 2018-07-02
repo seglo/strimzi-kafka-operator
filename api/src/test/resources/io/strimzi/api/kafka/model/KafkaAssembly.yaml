@@ -24,6 +24,7 @@ spec:
     storage:
       type: persistent-claim
       size: 500Gi
+    rack: null
     config:
       min.insync.replicas: 3
     metrics: {

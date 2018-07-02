@@ -22,16 +22,16 @@ import java.util.Map;
         generateBuilderPackage = true,
         builderPackage = "io.strimzi.api.kafka.model"
 )
-public class RackConfig {
+public class Rack {
 
     private String topologyKey;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    public RackConfig() {
+    public Rack() {
 
     }
 
-    public RackConfig(String topologyKey) {
+    public Rack(String topologyKey) {
         this.topologyKey = topologyKey;
     }
 
@@ -43,12 +43,12 @@ public class RackConfig {
         return topologyKey;
     }
 
-    public static RackConfig fromJson(String json) {
-        RackConfig rackConfig = JsonUtils.fromJson(json, RackConfig.class);
-        if (rackConfig != null && (rackConfig.getTopologyKey() == null || rackConfig.getTopologyKey().equals(""))) {
+    public static Rack fromJson(String json) {
+        Rack rack = JsonUtils.fromJson(json, Rack.class);
+        if (rack != null && (rack.getTopologyKey() == null || rack.getTopologyKey().equals(""))) {
             throw new IllegalArgumentException("In rack configuration the 'topologyKey' field is mandatory");
         }
-        return rackConfig;
+        return rack;
     }
 
     @JsonAnyGetter
