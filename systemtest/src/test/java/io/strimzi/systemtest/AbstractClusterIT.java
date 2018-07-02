@@ -155,7 +155,7 @@ public class AbstractClusterIT {
     }
 
     private <T extends CustomResource, L extends CustomResourceList<T>, D extends CustomResourceDoneable<T>>
-    void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
+        void replaceCrdResource(Class<T> crdClass, Class<L> listClass, Class<D> doneableClass, String resourceName, Consumer<T> editor) {
         Resource<T, D> namedResource = Crds.operation(client, crdClass, listClass, doneableClass).inNamespace(kubeClient.namespace()).withName(resourceName);
         T resource = namedResource.get();
         editor.accept(resource);
