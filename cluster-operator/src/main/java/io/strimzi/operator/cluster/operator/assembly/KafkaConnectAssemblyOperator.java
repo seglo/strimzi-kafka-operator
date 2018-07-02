@@ -17,8 +17,8 @@ import io.strimzi.operator.cluster.model.AssemblyType;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaConnectAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
@@ -55,7 +55,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
      */
     public KafkaConnectAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                         CertManager certManager,
-                                        KafkaConnectAssemblyCrdOperator connectOperator,
+                                        CrdOperator<KubernetesClient, KafkaConnectAssembly, KafkaConnectAssemblyList, DoneableKafkaConnectAssembly> connectOperator,
                                         ConfigMapOperator configMapOperations,
                                         DeploymentOperator deploymentOperations,
                                         ServiceOperator serviceOperations,

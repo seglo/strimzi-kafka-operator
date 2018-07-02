@@ -18,9 +18,9 @@ import io.strimzi.operator.cluster.model.KafkaConnectS2ICluster;
 import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.cluster.operator.resource.ImageStreamOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaConnectS2IAssemblyCrdOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
 import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.vertx.core.AsyncResult;
@@ -63,7 +63,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
      */
     public KafkaConnectS2IAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                            CertManager certManager,
-                                           KafkaConnectS2IAssemblyCrdOperator connectOperator,
+                                           CrdOperator<OpenShiftClient, KafkaConnectS2IAssembly, KafkaConnectS2IAssemblyList, DoneableKafkaConnectS2IAssembly> connectOperator,
                                            ConfigMapOperator configMapOperations,
                                            DeploymentConfigOperator deploymentConfigOperations,
                                            ServiceOperator serviceOperations,

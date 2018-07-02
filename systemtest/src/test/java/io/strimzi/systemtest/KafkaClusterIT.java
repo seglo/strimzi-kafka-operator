@@ -7,6 +7,9 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.model.JsonUtils;
+import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.Zookeeper;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.JUnitGroup;
 import io.strimzi.test.KafkaFromClasspathYaml;
@@ -24,7 +27,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -108,7 +110,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         final String newPodName = kafkaPodName(CLUSTER_NAME,  newPodId);
         final String firstPodName = kafkaPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas + 1));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setReplicas(initialReplicas + 1);
+        });
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas + 1);
 
         // Test that the new broker has joined the kafka cluster by checking it knows about all the other broker's API versions
@@ -128,7 +132,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         // scale down
         LOGGER.info("Scaling down");
         //client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaStatefulSetName(CLUSTER_NAME)).scale(initialReplicas, true);
-        replaceCm(CLUSTER_NAME, "kafka-nodes", String.valueOf(initialReplicas));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getKafka().setReplicas(initialReplicas);
+        });
         kubeClient.waitForStatefulSet(kafkaClusterName(CLUSTER_NAME), initialReplicas);
 
         final int finalReplicas = client.apps().statefulSets().inNamespace(NAMESPACE).withName(kafkaClusterName(CLUSTER_NAME)).get().getStatus().getReplicas();
@@ -166,7 +172,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
         };
         final String firstZkPodName = zookeeperPodName(CLUSTER_NAME,  0);
         LOGGER.info("Scaling up to {}", scaleZkTo);
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(scaleZkTo));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getZookeeper().setReplicas(scaleZkTo);
+        });
         kubeClient.waitForPod(newZkPodName[0]);
         kubeClient.waitForPod(newZkPodName[1]);
 
@@ -190,7 +198,9 @@ public class KafkaClusterIT extends AbstractClusterIT {
 
         // scale down
         LOGGER.info("Scaling down");
-        replaceCm(CLUSTER_NAME, "zookeeper-nodes", String.valueOf(1));
+        replaceKafkaResource(CLUSTER_NAME, k -> {
+            k.getSpec().getZookeeper().setReplicas(1);
+        });
         kubeClient.waitForResourceDeletion("po", zookeeperPodName(CLUSTER_NAME,  1));
         // Wait for the one remaining node to enter standalone mode
         waitForZkMntr(firstZkPodName, Pattern.compile("zk_server_state\\s+standalone"));
@@ -220,7 +230,7 @@ public class KafkaClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Verify values before update");
-        String configMapBefore = kubeClient.get("cm", clusterName);
+        String configMapBefore = kubeClient.get("kafka", clusterName);
         assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-delay", "30"));
         assertThat(configMapBefore, valueOfCmEquals("zookeeper-healthcheck-timeout", "10"));
         assertThat(configMapBefore, valueOfCmEquals("kafka-healthcheck-delay", "30"));
@@ -244,14 +254,16 @@ public class KafkaClusterIT extends AbstractClusterIT {
             assertThat(zkPodJson, hasJsonPath("$.spec.containers[*].livenessProbe.timeoutSeconds", hasItem(10)));
         }
 
-        Map<String, String> changes = new HashMap<>();
-        changes.put("zookeeper-healthcheck-delay", "31");
-        changes.put("zookeeper-healthcheck-timeout", "11");
-        changes.put("kafka-healthcheck-delay", "31");
-        changes.put("kafka-healthcheck-timeout", "11");
-        changes.put("kafka-config", "{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}");
-        changes.put("zookeeper-config", "{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}");
-        replaceCm(clusterName, changes);
+        replaceKafkaResource(clusterName, k -> {
+            Kafka kafka = k.getSpec().getKafka();
+            kafka.getLivenessProbe().setInitialDelaySeconds(31);
+            kafka.getReadinessProbe().setInitialDelaySeconds(31);
+            kafka.getLivenessProbe().setTimeoutSeconds(11);
+            kafka.getReadinessProbe().setTimeoutSeconds(11);
+            kafka.setConfig(JsonUtils.fromJson("{\"default.replication.factor\": 2,\"offsets.topic.replication.factor\": 2,\"transaction.state.log.replication.factor\": 2}", Map.class));
+            Zookeeper z = k.getSpec().getZookeeper();
+            z.setConfig(JsonUtils.fromJson("{\"timeTick\": 2100, \"initLimit\": 6, \"syncLimit\": 3}", Map.class));
+        });
 
         for (int i = 0; i < expectedZKPods; i++) {
             kubeClient.waitForResourceUpdate("pod", zookeeperPodName(clusterName, i), zkPodStartTime.get(i));

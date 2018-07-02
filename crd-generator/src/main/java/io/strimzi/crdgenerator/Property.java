@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.crdgenerator.annotations.OmitFromSchema;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -96,8 +95,7 @@ class Property implements AnnotatedElement {
                     && !returnType.equals(void.class);
             boolean isNotInherited = !hasMethod(CustomResource.class, method)
                     && !hasMethod(HasMetadata.class, method);
-            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class)
-                    && !method.isAnnotationPresent(OmitFromSchema.class);
+            boolean isNotIgnored = !method.isAnnotationPresent(JsonIgnore.class);
             if (isGetter
                     && isNotInherited
                     && isNotIgnored) {
@@ -107,8 +105,7 @@ class Property implements AnnotatedElement {
         }
         for (Field field : crdClass.getFields()) {
             boolean isProperty = !Modifier.isStatic(field.getModifiers());
-            boolean isNotIgnored = !field.isAnnotationPresent(JsonIgnore.class)
-                    && !field.isAnnotationPresent(OmitFromSchema.class);
+            boolean isNotIgnored = !field.isAnnotationPresent(JsonIgnore.class);
             if (isProperty && isNotIgnored) {
                 Property property = new Property(field);
                 unordered.put(property.getName(), property);

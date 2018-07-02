@@ -24,7 +24,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
@@ -77,7 +77,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     public KafkaAssemblyOperator(Vertx vertx, boolean isOpenShift,
                                  long operationTimeoutMs,
                                  CertManager certManager,
-                                 KafkaAssemblyCrdOperator kafkaAssemblyCrdOperator,
+                                 CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaAssemblyCrdOperator,
                                  ConfigMapOperator configMapOperations,
                                  ServiceOperator serviceOperations,
                                  ZookeeperSetOperator zkSetOperations,

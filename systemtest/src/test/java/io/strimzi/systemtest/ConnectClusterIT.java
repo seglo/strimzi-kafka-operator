@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Event;
+import io.strimzi.api.kafka.model.JsonUtils;
 import io.strimzi.test.ClusterOperator;
 import io.strimzi.test.CmData;
 import io.strimzi.test.ConnectCluster;
@@ -15,14 +16,11 @@ import io.strimzi.test.OpenShiftOnly;
 import io.strimzi.test.Resources;
 import io.strimzi.test.StrimziRunner;
 import io.strimzi.test.k8s.Oc;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -135,7 +133,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
         final int scaleTo = initialReplicas + 1;
 
         LOGGER.info("Scaling up to {}", scaleTo);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas + 1));
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setReplicas(initialReplicas + 1);
+        });
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
         assertEquals(scaleTo, connectPods.size());
@@ -147,7 +147,9 @@ public class ConnectClusterIT extends AbstractClusterIT {
         }
 
         LOGGER.info("Scaling down to {}", initialReplicas);
-        replaceCm(CONNECT_CLUSTER_NAME, "nodes", String.valueOf(initialReplicas));
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setReplicas(initialReplicas);
+        });
         while (kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect").size() == scaleTo) {
             LOGGER.info("Waiting for connect pod deletion");
         }
@@ -166,17 +168,19 @@ public class ConnectClusterIT extends AbstractClusterIT {
     public void testForUpdateValuesInConnectCM() {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
 
-        String conncectConfig = "{\n" +
+        String connectConfig = "{\n" +
                 "      \"bootstrap.servers\": \"" + KAFKA_CONNECT_BOOTSTRAP_SERVERS + "\",\n" +
                 "      \"config.storage.replication.factor\": \"1\",\n" +
                 "      \"offset.storage.replication.factor\": \"1\",\n" +
                 "      \"status.storage.replication.factor\": \"1\"\n" +
                 "    }";
-        Map<String, String> changes = new HashMap<>();
-        changes.put("connect-config", conncectConfig);
-        changes.put("healthcheck-delay", "61");
-        changes.put("healthcheck-timeout", "6");
-        replaceCm(CONNECT_CLUSTER_NAME, changes);
+        replaceKafkaConnectResource(CONNECT_CLUSTER_NAME, c -> {
+            c.getSpec().setConfig(JsonUtils.fromJson(connectConfig, Map.class));
+            c.getSpec().getLivenessProbe().setInitialDelaySeconds(61);
+            c.getSpec().getReadinessProbe().setInitialDelaySeconds(61);
+            c.getSpec().getLivenessProbe().setTimeoutSeconds(6);
+            c.getSpec().getReadinessProbe().setTimeoutSeconds(6);
+        });
 
         kubeClient.waitForDeployment(kafkaConnectName(CONNECT_CLUSTER_NAME));
         for (int i = 0; i < connectPods.size(); i++) {

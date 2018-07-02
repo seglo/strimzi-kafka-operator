@@ -33,7 +33,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
@@ -214,7 +214,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private KafkaAssemblyOperator createCluster(TestContext context) {
         ConfigMapOperator cmops = new ConfigMapOperator(vertx, mockClient);
-        KafkaAssemblyCrdOperator kafkaops = new KafkaAssemblyCrdOperator(vertx, mockClient);
+        CrdOperator<KubernetesClient, KafkaAssembly, KafkaAssemblyList, DoneableKafkaAssembly> kafkaops = new CrdOperator<>(vertx, mockClient, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
         ServiceOperator svcops = new ServiceOperator(vertx, mockClient);
         KafkaSetOperator ksops = new KafkaSetOperator(vertx, mockClient, 60_000L);
         ZookeeperSetOperator zksops = new ZookeeperSetOperator(vertx, mockClient, 60_000L);

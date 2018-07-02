@@ -20,7 +20,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.SecretOperator;
@@ -61,7 +61,7 @@ public class PartialRollingUpdateTest {
     private Pod kafkaPod2;
     private Pod kafkaPod3;
     private Pod kafkaPod4;
-    private KafkaAssemblyCrdOperator kafkaops;
+    private CrdOperator kafkaops;
     private ConfigMapOperator cmops;
     private ServiceOperator svcops;
     private KafkaSetOperator ksops;
@@ -115,7 +115,7 @@ public class PartialRollingUpdateTest {
                 .end()
                 .build();
 
-        kafkaops = new KafkaAssemblyCrdOperator(vertx, bootstrapClient);
+        kafkaops = new CrdOperator(vertx, bootstrapClient, KafkaAssembly.class, KafkaAssemblyList.class, DoneableKafkaAssembly.class);
         cmops = new ConfigMapOperator(vertx, bootstrapClient);
         svcops = new ServiceOperator(vertx, bootstrapClient);
         ksops = new KafkaSetOperator(vertx, bootstrapClient, 60_000L);

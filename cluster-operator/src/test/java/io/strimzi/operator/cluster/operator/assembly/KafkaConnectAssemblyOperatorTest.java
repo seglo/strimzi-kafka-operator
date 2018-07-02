@@ -14,16 +14,16 @@ import io.strimzi.operator.cluster.Reconciliation;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.AssemblyType;
-import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.SecretOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaConnectAssemblyCrdOperator;
-import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.Labels;
+import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
+import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
-import io.vertx.core.AsyncResult;
+import io.strimzi.operator.cluster.operator.resource.SecretOperator;
+import io.strimzi.operator.cluster.operator.resource.ServiceOperator;
 import io.strimzi.test.TestUtils;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -73,7 +73,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testCreateCluster(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -131,7 +131,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterNoDiff(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -191,7 +191,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateCluster(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -280,7 +280,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testUpdateClusterFailure(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -337,7 +337,7 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleUp(TestContext context) {
         final int scaleTo = 4;
 
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -386,7 +386,7 @@ public class KafkaConnectAssemblyOperatorTest {
     public void testUpdateClusterScaleDown(TestContext context) {
         int scaleTo = 2;
 
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -433,7 +433,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testDeleteCluster(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);
@@ -480,7 +480,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
     @Test
     public void testReconcile(TestContext context) {
-        KafkaConnectAssemblyCrdOperator mockConnectOps = mock(KafkaConnectAssemblyCrdOperator.class);
+        CrdOperator mockConnectOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         DeploymentOperator mockDcOps = mock(DeploymentOperator.class);

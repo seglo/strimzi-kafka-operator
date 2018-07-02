@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
@@ -45,8 +47,8 @@ import java.util.stream.Collectors;
  * <p>This class manages a per-assembly locking strategy so only one operation per assembly
  * can proceed at once.</p>
  */
-public abstract class AbstractAssemblyOperator<C, T extends HasMetadata,
-        L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
+public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/, D extends Doneable<T>, R extends Resource<T, D>> {
 
     private static final Logger log = LogManager.getLogger(AbstractAssemblyOperator.class.getName());
 

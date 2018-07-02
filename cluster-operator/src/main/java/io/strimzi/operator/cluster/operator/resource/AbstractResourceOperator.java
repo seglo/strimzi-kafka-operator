@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.cluster.model.Labels;
@@ -26,7 +27,7 @@ import java.util.List;
  * @param <D> The doneable variant of the Kubernetes resource type.
  * @param <R> The resource operations.
  */
-public abstract class AbstractResourceOperator<C, T extends HasMetadata,
+public abstract class AbstractResourceOperator<C extends KubernetesClient, T extends HasMetadata,
         L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>> {
 
     private final Logger log = LogManager.getLogger(getClass());

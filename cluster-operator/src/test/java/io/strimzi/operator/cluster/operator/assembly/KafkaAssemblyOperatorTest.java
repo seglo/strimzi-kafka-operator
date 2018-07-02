@@ -24,7 +24,7 @@ import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
-import io.strimzi.operator.cluster.operator.resource.KafkaAssemblyCrdOperator;
+import io.strimzi.operator.cluster.operator.resource.CrdOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
@@ -190,7 +190,7 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
 
         // create CM, Service, headless service, statefulset and so on
-        KafkaAssemblyCrdOperator mockKafkaOps = mock(KafkaAssemblyCrdOperator.class);
+        CrdOperator mockKafkaOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
@@ -322,7 +322,7 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator topicOperator = TopicOperator.fromCrd(clusterCm);
 
         // create CM, Service, headless service, statefulset
-        KafkaAssemblyCrdOperator mockKafkaOps = mock(KafkaAssemblyCrdOperator.class);
+        CrdOperator mockKafkaOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
@@ -572,7 +572,7 @@ public class KafkaAssemblyOperatorTest {
         TopicOperator originalTopicOperator = TopicOperator.fromCrd(originalAssembly);
 
         // create CM, Service, headless service, statefulset and so on
-        KafkaAssemblyCrdOperator mockKafkaOps = mock(KafkaAssemblyCrdOperator.class);
+        CrdOperator mockKafkaOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);
@@ -735,7 +735,7 @@ public class KafkaAssemblyOperatorTest {
         Async async = context.async(3);
 
         // create CM, Service, headless service, statefulset
-        KafkaAssemblyCrdOperator mockKafkaOps = mock(KafkaAssemblyCrdOperator.class);
+        CrdOperator mockKafkaOps = mock(CrdOperator.class);
         ConfigMapOperator mockCmOps = mock(ConfigMapOperator.class);
         ServiceOperator mockServiceOps = mock(ServiceOperator.class);
         ZookeeperSetOperator mockZsOps = mock(ZookeeperSetOperator.class);

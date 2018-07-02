@@ -4,15 +4,23 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.Doneable;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
 
-public abstract class AbstractWatchableResourceOperator<C, T extends HasMetadata, L extends KubernetesResourceList/*<T>*/, D, R extends Resource<T, D>>
+public abstract class AbstractWatchableResourceOperator<
+        C extends KubernetesClient,
+        T extends HasMetadata,
+        L extends KubernetesResourceList/*<T>*/,
+        D extends Doneable<T>,
+        R extends Resource<T, D>>
         extends AbstractResourceOperator<C, T, L, D, R> {
+
     /**
      * Constructor.
      *
