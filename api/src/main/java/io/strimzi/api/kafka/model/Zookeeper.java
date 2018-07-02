@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -34,6 +35,8 @@ public class Zookeeper extends ReplicatedJvmPods {
 
     private Map<String, Object> config = new HashMap<>(0);
 
+    private Logging logging;
+
     @Description("The zookeeper broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
@@ -51,5 +54,15 @@ public class Zookeeper extends ReplicatedJvmPods {
 
     public void setStorage(Storage storage) {
         this.storage = storage;
+    }
+
+    @Description("Logging configuration for Zookeeper")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Logging getLogging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
     }
 }

@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import org.junit.Assert;
@@ -15,6 +16,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -32,6 +34,12 @@ public class TopicOperatorTest {
     private final String kafkaConfigJson = "{\"foo\":\"bar\"}";
     private final String zooConfigJson = "{\"foo\":\"bar\"}";
     private final String storageJson = "{\"type\": \"ephemeral\"}";
+    private final InlineLogging kafkaLogJson = new InlineLogging();
+    private final InlineLogging zooLogJson = new InlineLogging();
+    {
+        kafkaLogJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+        zooLogJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+    }
 
     private final String tcWatchedNamespace = "my-topic-namespace";
     private final String tcImage = "my-topic-operator-image";
@@ -47,7 +55,8 @@ public class TopicOperatorTest {
             "\"topicMetadataMaxAttempts\":" + tcTopicMetadataMaxAttempts +
             " }";
 
-    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson, null);
+
+    private final KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, topicOperatorJson, null, kafkaLogJson, zooLogJson);
     private final TopicOperator tc = TopicOperator.fromCrd(resource);
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -65,19 +74,18 @@ public class TopicOperatorTest {
 
     @Test
     public void testFromConfigMapNoConfig() {
-
-        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson);
+        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, metricsCmJson, null, kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(resource);
-
         assertNull(tc);
     }
 
     @Test
     public void testFromConfigMapDefaultConfig() {
-
-        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson, storageJson, "{ }", null);
+        KafkaAssembly resource = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image,
+                healthDelay, healthTimeout, metricsCmJson, kafkaConfigJson, zooConfigJson,
+                storageJson, "{ }", null, kafkaLogJson, zooLogJson);
         TopicOperator tc = TopicOperator.fromCrd(resource);
-
         Assert.assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_IMAGE, tc.getImage());
         assertEquals(namespace, tc.getWatchedNamespace());
         assertEquals(io.strimzi.api.kafka.model.TopicOperator.DEFAULT_FULL_RECONCILIATION_INTERVAL_MS, tc.getReconciliationIntervalMs());

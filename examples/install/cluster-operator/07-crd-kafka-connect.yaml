@@ -314,6 +314,16 @@ spec:
               description: 'The Kafka Connect configuration. Properties with the following
                 prefixes cannot be set: ssl., sasl., security., listeners, plugin.path,
                 rest.'
+            logging:
+              description: Logging configuration for Kafka Connect
+              type: object
+              properties:
+                loggers:
+                  type: object
+                name:
+                  type: string
+                type:
+                  type: string
             resources:
               description: Resource constraints (limits and requests).
               type: object

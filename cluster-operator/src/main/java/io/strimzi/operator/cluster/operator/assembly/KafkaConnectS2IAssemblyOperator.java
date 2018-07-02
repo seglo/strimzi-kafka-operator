@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.DoneableKafkaConnectS2IAssembly;
 import io.strimzi.api.kafka.KafkaConnectS2IAssemblyList;
+import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectS2IAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
@@ -90,10 +92,14 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
                 return;
             }
             Future<Void> chainFuture = Future.future();
+            connect.generateBuildConfig();
+            ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
+                    configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
+                    null);
 
             deploymentConfigOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                     .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                    .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
+                    .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                     .compose(i -> deploymentConfigOperations.reconcile(namespace, connect.getName(), connect.generateDeploymentConfig()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getSourceImageStreamName(), connect.generateSourceImageStream()))
                     .compose(i -> imagesStreamOperations.reconcile(namespace, connect.getName(), connect.generateTargetImageStream()))
@@ -114,7 +120,7 @@ public class KafkaConnectS2IAssemblyOperator extends AbstractAssemblyOperator<Op
             String clusterName = KafkaConnectS2ICluster.kafkaConnectClusterName(assemblyName);
 
             CompositeFuture.join(serviceOperations.reconcile(namespace, clusterName, null),
-                resourceOperator.reconcile(namespace, KafkaConnectS2ICluster.metricsConfigName(clusterName), null),
+                configMapOperations.reconcile(namespace, KafkaConnectS2ICluster.logAndMetricsConfigName(clusterName), null),
                 deploymentConfigOperations.reconcile(namespace, clusterName, null),
                 imagesStreamOperations.reconcile(namespace, KafkaConnectS2ICluster.getSourceImageStreamName(clusterName), null),
                 imagesStreamOperations.reconcile(namespace, clusterName, null),

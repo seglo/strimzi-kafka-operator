@@ -352,6 +352,16 @@ spec:
                     host.name, port, inter.broker.listener.name, sasl., ssl., security.,
                     password., principal.builder.class, log.dir, zookeeper.connect,
                     zookeeper.set.acl, authorizer., super.user'
+                logging:
+                  description: Logging configuration for Kafka
+                  type: object
+                  properties:
+                    loggers:
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
                 rack:
                   description: Configuration of the `broker.rack` broker config.
                   type: object
@@ -730,6 +740,16 @@ spec:
                   description: 'The zookeeper broker config. Properties with the following
                     prefixes cannot be set: server., dataDir, dataLogDir, clientPort,
                     authProvider, quorum.auth, requireClientAuthScheme'
+                logging:
+                  description: Logging configuration for Zookeeper
+                  type: object
+                  properties:
+                    loggers:
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
                 resources:
                   description: Resource constraints (limits and requests).
                   type: object
@@ -1052,6 +1072,16 @@ spec:
                   description: The number of attempts at getting topic metadata
                 additionalProperties:
                   type: object
+                logging:
+                  description: Logging configuration
+                  type: object
+                  properties:
+                    loggers:
+                      type: object
+                    name:
+                      type: string
+                    type:
+                      type: string
             additionalProperties:
               type: object
           required:

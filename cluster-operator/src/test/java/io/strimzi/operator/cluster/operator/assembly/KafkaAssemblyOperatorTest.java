@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JsonUtils;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.Storage;
@@ -23,8 +24,8 @@ import io.strimzi.operator.cluster.model.Labels;
 import io.strimzi.operator.cluster.model.TopicOperator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.CrdOperator;
+import io.strimzi.operator.cluster.operator.resource.DeploymentOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.PvcOperator;
 import io.strimzi.operator.cluster.operator.resource.ReconcileResult;
@@ -77,6 +78,14 @@ import static org.mockito.Mockito.when;
 public class KafkaAssemblyOperatorTest {
 
     public static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
+    public static final InlineLogging LOG_KAFKA_CONFIG = new InlineLogging();
+    public static final InlineLogging LOG_ZOOKEEPER_CONFIG = new InlineLogging();
+    public static final InlineLogging LOG_CONNECT_CONFIG = new InlineLogging();
+    static {
+        LOG_KAFKA_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "INFO"));
+        LOG_ZOOKEEPER_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "INFO"));
+        LOG_CONNECT_CONFIG.setLoggers(singletonMap("connect.root.logger.level", "INFO"));
+    }
     private final boolean openShift;
     private final boolean metrics;
     private final String kafkaConfig;
@@ -235,6 +244,10 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
 
+        ArgumentCaptor<ConfigMap> logCaptor = ArgumentCaptor.forClass(ConfigMap.class);
+        ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(null)));
+
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, openShift,
                 ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS,
                 certManager,
@@ -252,13 +265,8 @@ public class KafkaAssemblyOperatorTest {
             context.assertTrue(createResult.succeeded());
 
             // No metrics config  => no CMs created
-            Set<String> metricsNames = new HashSet<>();
-            if (kafkaCluster.isMetricsEnabled()) {
-                metricsNames.add(KafkaCluster.metricConfigsName(clusterCmName));
-            }
-            if (zookeeperCluster.isMetricsEnabled()) {
-                metricsNames.add(ZookeeperCluster.zookeeperMetricsName(clusterCmName));
-            }
+            Set<String> logsAndMetricsNames = new HashSet<>();
+            logsAndMetricsNames.add(KafkaCluster.metricAndLogConfigsName(clusterCmName));
             /*
             Map<String, ConfigMap> cmsByName = new HashMap<>();
             Iterator<ConfigMap> it2 = metricsCaptor.getAllValues().iterator();
@@ -359,7 +367,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> metricsCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(eq(assemblyNamespace), metricsCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
+        ArgumentCaptor<String> logCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(eq(assemblyNamespace), logCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
         when(mockServiceOps.reconcile(eq(assemblyNamespace), serviceCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
+
         when(mockKsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
         when(mockZsOps.reconcile(anyString(), ssCaptor.capture(), isNull())).thenReturn(Future.succeededFuture());
 
@@ -446,7 +458,7 @@ public class KafkaAssemblyOperatorTest {
         int healthDelay = 120;
         int healthTimeout = 30;
         String metricsCmJson = metrics ? METRICS_CONFIG : null;
-        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null);
+        return ResourceUtils.createKafkaCluster(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, kafkaConfig, zooConfig, storage, tcConfig, null, LOG_ZOOKEEPER_CONFIG, LOG_KAFKA_CONFIG);
     }
 
     private List<Secret> getInitialSecrets() {
@@ -543,9 +555,31 @@ public class KafkaAssemblyOperatorTest {
     }
 
     @Test
+    public void testUpdateClusterLogConfig(TestContext context) {
+        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        InlineLogging logger = new InlineLogging();
+        logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
+        kafkaAssembly.getSpec().getKafka().setLogging(logger);
+        List<Secret> secrets = getClusterSecrets("bar",
+                kafkaAssembly.getSpec().getKafka().getReplicas());
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
+    }
+
+    @Test
     public void testUpdateZkClusterMetricsConfig(TestContext context) {
         KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setMetrics(singletonMap("something", "changed"));
+        List<Secret> secrets = getClusterSecrets("bar",
+                kafkaAssembly.getSpec().getKafka().getReplicas());
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
+    }
+
+    @Test
+    public void testUpdateZkClusterLogConfig(TestContext context) {
+        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
+        InlineLogging logger = new InlineLogging();
+        logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
+        kafkaAssembly.getSpec().getZookeeper().setLogging(logger);
         List<Secret> secrets = getClusterSecrets("bar",
                 kafkaAssembly.getSpec().getKafka().getReplicas());
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
@@ -561,7 +595,6 @@ public class KafkaAssemblyOperatorTest {
             updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
         }
     }
-
 
     private void updateCluster(TestContext context, KafkaAssembly originalAssembly, KafkaAssembly updatedAssembly, List<Secret> secrets) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(certManager, originalAssembly, secrets);
@@ -586,19 +619,39 @@ public class KafkaAssemblyOperatorTest {
         // Mock CM get
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
-                    .withName(KafkaCluster.metricConfigsName(clusterName))
+                .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
                     .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterNamespace, KafkaCluster.metricConfigsName(clusterName))).thenReturn(metricsCm);
+
+        when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsCm);
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
-                .withName(ZookeeperCluster.zookeeperMetricsName(clusterName))
+                .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
                 .withNamespace(clusterNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.METRICS_CONFIG_FILE, METRICS_CONFIG))
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
                 .build();
-        when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricsName(clusterName))).thenReturn(zkMetricsCm);
+        when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zkMetricsCm);
+
+        ConfigMap logCm = new ConfigMapBuilder().withNewMetadata()
+                .withName(KafkaCluster.metricAndLogConfigsName(clusterName))
+                .withNamespace(clusterNamespace)
+                .endMetadata()
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
+                        updatedKafkaCluster.parseLogging(LOG_KAFKA_CONFIG, null)))
+                .build();
+        when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(logCm);
+        ConfigMap zklogsCm = new ConfigMapBuilder().withNewMetadata()
+                .withName(ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))
+                .withNamespace(clusterNamespace)
+                .endMetadata()
+                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
+                        updatedKafkaCluster.parseLogging(LOG_KAFKA_CONFIG, null)))
+                .build();
+
+        when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zkMetricsCm);
+        when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
 
 
         // Mock Service gets
@@ -650,6 +703,12 @@ public class KafkaAssemblyOperatorTest {
         Set<String> metricsCms = set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
+            return Future.succeededFuture();
+        }).when(mockCmOps).reconcile(eq(clusterNamespace), anyString(), any());
+
+        Set<String> logCms = set();
+        doAnswer(invocation -> {
+            logCms.add(invocation.getArgument(1));
             return Future.succeededFuture();
         }).when(mockCmOps).reconcile(eq(clusterNamespace), anyString(), any());
 

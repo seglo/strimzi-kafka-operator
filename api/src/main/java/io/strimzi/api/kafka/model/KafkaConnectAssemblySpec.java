@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -29,6 +30,8 @@ public class KafkaConnectAssemblySpec extends ReplicatedJvmPods {
 
     private Map<String, Object> config = new HashMap<>(0);
 
+    private Logging logging;
+
     public KafkaConnectAssemblySpec() {
         this.setImage(DEFAULT_IMAGE);
         this.setReplicas(3);
@@ -48,5 +51,15 @@ public class KafkaConnectAssemblySpec extends ReplicatedJvmPods {
 
     public void setConfig(Map<String, Object> config) {
         this.config = config;
+    }
+
+    @Description("Logging configuration for Kafka Connect")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Logging getLogging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
     }
 }

@@ -4,12 +4,14 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.DoneableKafkaConnectAssembly;
 import io.strimzi.api.kafka.KafkaConnectAssemblyList;
+import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.Reconciliation;
@@ -78,11 +80,14 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
             handler.handle(Future.failedFuture(e));
             return;
         }
+        ConfigMap logAndMetricsConfigMap = connect.generateMetricsAndLogConfigMap(connect.getLogging() instanceof ExternalLogging ?
+                configMapOperations.get(namespace, ((ExternalLogging) connect.getLogging()).getName()) :
+                null);
         log.debug("{}: Updating Kafka Connect cluster", reconciliation, name, namespace);
         Future<Void> chainFuture = Future.future();
         deploymentOperations.scaleDown(namespace, connect.getName(), connect.getReplicas())
                 .compose(scale -> serviceOperations.reconcile(namespace, connect.getName(), connect.generateService()))
-                .compose(i -> configMapOperations.reconcile(namespace, connect.getMetricsConfigName(), connect.generateMetricsConfigMap()))
+                .compose(i -> configMapOperations.reconcile(namespace, connect.getAncillaryConfigName(), logAndMetricsConfigMap))
                 .compose(i -> deploymentOperations.reconcile(namespace, connect.getName(), connect.generateDeployment()))
                 .compose(i -> deploymentOperations.scaleUp(namespace, connect.getName(), connect.getReplicas()).map((Void) null))
                 .compose(chainFuture::complete, chainFuture);
@@ -96,7 +101,7 @@ public class KafkaConnectAssemblyOperator extends AbstractAssemblyOperator<Kuber
         String name = KafkaConnectCluster.kafkaConnectClusterName(assemblyName);
 
         CompositeFuture.join(serviceOperations.reconcile(namespace, name, null),
-            resourceOperator.reconcile(namespace, KafkaConnectCluster.metricsConfigName(name), null),
+            configMapOperations.reconcile(namespace, KafkaConnectCluster.logAndMetricsConfigName(name), null),
             deploymentOperations.reconcile(namespace, name, null))
             .map((Void) null).setHandler(handler);
     }

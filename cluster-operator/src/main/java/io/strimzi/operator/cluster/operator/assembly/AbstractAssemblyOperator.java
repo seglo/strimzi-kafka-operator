@@ -209,7 +209,7 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                         if (createResult.cause() instanceof InvalidConfigMapException) {
                                             log.error(createResult.cause().getMessage());
                                         } else {
-                                            log.error(createResult.cause().toString());
+                                            log.error("{}: Error creating or updating desired resource", reconciliation, createResult.cause());
                                         }
                                     } else {
                                         handler.handle(createResult);

@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.WeightedPodAffinityTerm;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.api.kafka.model.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.Rack;
@@ -20,6 +21,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
@@ -38,9 +40,15 @@ public class KafkaClusterTest {
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{\"foo\":\"bar\"}";
+    private final InlineLogging kafkaLogJson = new InlineLogging();
+    private final InlineLogging zooLogJson = new InlineLogging();
+    {
+        kafkaLogJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+        zooLogJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+    }
 
     private final CertManager certManager = new MockCertManager();
-    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson);
+    private final KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, kafkaLogJson, zooLogJson);
     private final KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
 
     @Rule
@@ -48,12 +56,12 @@ public class KafkaClusterTest {
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = kc.generateMetricsConfigMap();
+        ConfigMap metricsCm = kc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.METRICS_CONFIG_FILE));
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
     @Test
@@ -106,7 +114,7 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSetWithRack() {
         KafkaAssembly kafkaAssembly = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                 metricsCmJson, configurationJson, "{}", "{\"type\": \"ephemeral\"}",
-                null, "{\"topologyKey\": \"rack-key\"}");
+                null, "{\"topologyKey\": \"rack-key\"}", null, null);
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         checkStatefulSet(ss, kafkaAssembly, true);
@@ -117,7 +125,7 @@ public class KafkaClusterTest {
         KafkaAssembly kafkaAssembly =
                 ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout,
                         metricsCmJson, configurationJson, "{}", "{ \"type\": \"persistent-claim\", \"size\": \"1Gi\" }",
-                        null, "{\"topologyKey\": \"rack-key\"}");
+                        null, "{\"topologyKey\": \"rack-key\"}", null, null);
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, kafkaAssembly, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(false);
         checkStatefulSet(ss, kafkaAssembly, false);
@@ -191,19 +199,19 @@ public class KafkaClusterTest {
     @Test
     public void testDeleteClaim() {
         KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"ephemeral\"}", null, null);
+                "{\"type\": \"ephemeral\"}", null, null, null, null);
         KafkaCluster kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null);
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null, null, null);
         kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null);
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null, null, null);
         kc = KafkaCluster.fromCrd(certManager, cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));

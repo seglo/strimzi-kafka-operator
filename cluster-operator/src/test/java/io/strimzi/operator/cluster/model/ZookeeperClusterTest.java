@@ -7,12 +7,14 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.extensions.StatefulSet;
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaAssembly;
 import io.strimzi.operator.cluster.ResourceUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import static io.strimzi.operator.cluster.ResourceUtils.labels;
 import static org.junit.Assert.assertEquals;
@@ -29,20 +31,27 @@ public class ZookeeperClusterTest {
     private final int healthTimeout = 30;
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String configurationJson = "{}";
+    private final InlineLogging kafkaLogConfigJson = new InlineLogging();
+    private final InlineLogging zooLogConfigJson = new InlineLogging();
+    {
+        kafkaLogConfigJson.setLoggers(Collections.singletonMap("kafka.root.logger.level", "OFF"));
+        zooLogConfigJson.setLoggers(Collections.singletonMap("zookeeper.root.logger", "OFF"));
+    }
     private final String zooConfigurationJson = "{\"foo\":\"bar\"}";
-    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson);
+    private final KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson, null, null, null, kafkaLogConfigJson, zooLogConfigJson);
     private final ZookeeperCluster zc = ZookeeperCluster.fromCrd(cm);
+
     @Rule
     public ResourceTester<KafkaAssembly, ZookeeperCluster> resourceTester = new ResourceTester<>(KafkaAssembly.class, ZookeeperCluster::fromCrd);
 
     @Test
     public void testMetricsConfigMap() {
-        ConfigMap metricsCm = zc.generateMetricsConfigMap();
+        ConfigMap metricsCm = zc.generateMetricsAndLogConfigMap(null);
         checkMetricsConfigMap(metricsCm);
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.METRICS_CONFIG_FILE));
+        assertEquals(metricsCmJson, metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS));
     }
 
     @Test
@@ -119,19 +128,19 @@ public class ZookeeperClusterTest {
     @Test
     public void testDeleteClaim() {
         KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
-                "{\"type\": \"ephemeral\"}", null, null);
+                "{\"type\": \"ephemeral\"}", null, null, null, null);
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(cm);
         StatefulSet ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null);
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null, null, null);
         zc = ZookeeperCluster.fromCrd(cm);
         ss = zc.generateStatefulSet(true);
         assertFalse(ZookeeperCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, zooConfigurationJson,
-                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null);
+                "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null, null, null);
         zc = ZookeeperCluster.fromCrd(cm);
         ss = zc.generateStatefulSet(true);
         assertTrue(ZookeeperCluster.deleteClaim(ss));

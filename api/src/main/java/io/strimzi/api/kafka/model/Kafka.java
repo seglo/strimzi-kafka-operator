@@ -41,6 +41,8 @@ public class Kafka extends ReplicatedJvmPods {
 
     private Rack rack;
 
+    private Logging logging;
+
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
@@ -78,5 +80,15 @@ public class Kafka extends ReplicatedJvmPods {
 
     public void setStorage(Storage storage) {
         this.storage = storage;
+    }
+
+    @Description("Logging configuration for Kafka")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Logging getLogging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
     }
 }

@@ -599,7 +599,10 @@ public class MockKube {
 
         private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
             KubernetesResourceList<CM> l = mock(listClass);
-            Collection<CM> values = db.values().stream().filter(predicate).map(resource -> copyResource(resource)).collect(Collectors.toList());
+            Collection<CM> values;
+            synchronized (db) {
+                values = db.values().stream().filter(predicate).map(resource -> copyResource(resource)).collect(Collectors.toList());
+            }
             when(l.getItems()).thenAnswer(i3 -> {
                 LOGGER.debug("{} list -> {}", resourceTypeClass.getSimpleName(), values);
                 return values;

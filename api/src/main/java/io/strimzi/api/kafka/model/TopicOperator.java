@@ -49,6 +49,7 @@ public class TopicOperator {
     private int topicMetadataMaxAttempts = DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
     private Resources resources;
     private Affinity affinity;
+    private Logging logging;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("The namespace the Topic Operator should watch.")
@@ -113,6 +114,16 @@ public class TopicOperator {
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
+    }
+
+    @Description("Logging configuration")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    public Logging getLogging() {
+        return logging;
+    }
+
+    public void setLogging(Logging logging) {
+        this.logging = logging;
     }
 
     @JsonAnyGetter
