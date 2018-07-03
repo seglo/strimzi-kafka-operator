@@ -553,13 +553,12 @@ public class KafkaAssemblyOperatorTest {
 
     @Test
     public void testUpdateTopicOperatorConfig(TestContext context) {
-        KafkaAssembly clusterCm = getKafkaAssembly("bar");
+        KafkaAssembly kafkaAssembly = getKafkaAssembly("bar");
         if (tcConfig != null) {
-            //clusterCm.getSpec().getTopicOperator().set;getData().put(TopicOperator.KEY_CONFIG, "{\"something\":\"changed\"}");
-            //List<Secret> secrets = getClusterSecrets("bar",
-            //        kafkaAssembly.getSpec().getKafka().getReplicas());
-            //updateCluster(context, getKafkaAssembly("bar"), clusterCm, secrets);
-            context.fail("TODO");
+            kafkaAssembly.getSpec().getTopicOperator().setImage("some/other:image");
+            List<Secret> secrets = getClusterSecrets("bar",
+                    kafkaAssembly.getSpec().getKafka().getReplicas());
+            updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly, secrets);
         }
     }
 
