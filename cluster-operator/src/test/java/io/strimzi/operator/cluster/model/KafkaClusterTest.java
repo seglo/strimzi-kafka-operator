@@ -192,19 +192,19 @@ public class KafkaClusterTest {
     public void testDeleteClaim() {
         KafkaAssembly cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
                 "{\"type\": \"ephemeral\"}", null, null);
-        KafkaCluster kc = KafkaCluster.fromCrd(cm);
+        KafkaCluster kc = KafkaCluster.fromCrd(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         StatefulSet ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
                 "{\"type\": \"persistent-claim\", \"deleteClaim\": false}", null, null);
-        kc = KafkaCluster.fromCrd(cm);
+        kc = KafkaCluster.fromCrd(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertFalse(KafkaCluster.deleteClaim(ss));
 
         cm = ResourceUtils.createKafkaCluster(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCmJson, configurationJson, "{}",
                 "{\"type\": \"persistent-claim\", \"deleteClaim\": true}", null, null);
-        kc = KafkaCluster.fromCrd(cm);
+        kc = KafkaCluster.fromCrd(cm, ResourceUtils.createKafkaClusterInitialSecrets(namespace));
         ss = kc.generateStatefulSet(true);
         assertTrue(KafkaCluster.deleteClaim(ss));
     }
