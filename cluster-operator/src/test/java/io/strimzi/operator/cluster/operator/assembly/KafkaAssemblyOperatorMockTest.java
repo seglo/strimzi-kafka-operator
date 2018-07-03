@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.api.kafka.model.Storage.deleteClaim;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -187,13 +188,13 @@ public class KafkaAssemblyOperatorMockTest {
                     .withNewKafka()
                         .withReplicas(kafkaReplicas)
                         .withStorage(kafkaStorage)
-                        .withMetrics(emptyMap())
+                        .withMetrics(singletonMap("foo", "bar"))
                         .withResources(resources)
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(zkReplicas)
                         .withStorage(zkStorage)
-                        .withMetrics(emptyMap())
+                        .withMetrics(singletonMap("foo", "bar"))
                     .endZookeeper()
                     .withNewTopicOperator()
                         .withImage("")
