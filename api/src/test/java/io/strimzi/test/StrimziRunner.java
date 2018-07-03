@@ -529,6 +529,9 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 final String zookeeperStatefulSetName = kafkaAssembly.getMetadata().getName() + "-zookeeper";
                 final String tcDeploymentName = kafkaAssembly.getMetadata().getName() + "-topic-operator";
                 last = new Bracket(last, new ResourceAction()
+                    .getPo(CO_DEPLOYMENT_NAME + ".*")
+                    .logs(CO_DEPLOYMENT_NAME + ".*")
+                    .getDep(CO_DEPLOYMENT_NAME)
                     .getSs(kafkaStatefulSetName)
                     .getPo(kafkaStatefulSetName + ".*")
                     .logs(kafkaStatefulSetName + ".*")
