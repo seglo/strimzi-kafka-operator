@@ -127,9 +127,10 @@ public class ZookeeperCluster extends AbstractModel {
             zk.setLivenessInitialDelay(zookeeper.getLivenessProbe().getInitialDelaySeconds());
             zk.setLivenessTimeout(zookeeper.getLivenessProbe().getTimeoutSeconds());
         }
-        if (zookeeper.getMetrics() != null) {
+        Map<String, Object> metrics = zookeeper.getMetrics();
+        if (metrics != null && !metrics.isEmpty()) {
             zk.setMetricsEnabled(true);
-            zk.setMetricsConfig(zookeeper.getMetrics().entrySet());
+            zk.setMetricsConfig(metrics.entrySet());
         }
         zk.setStorage(zookeeper.getStorage());
         zk.setConfiguration(new ZookeeperConfiguration(zookeeper.getConfig().entrySet()));

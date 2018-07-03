@@ -189,8 +189,11 @@ public class KafkaCluster extends AbstractModel {
         result.setInitImage(kafka.getBrokerRackInitImage());
         result.setJvmOptions(kafka.getJvmOptions());
         result.setConfiguration(new KafkaConfiguration(kafka.getConfig().entrySet()));
-        result.setMetricsConfig(kafka.getMetrics().entrySet());
-        result.setMetricsEnabled(kafka.getMetrics() != null);
+        Map<String, Object> metrics = kafka.getMetrics();
+        if (metrics != null && !metrics.isEmpty()) {
+            result.setMetricsEnabled(true);
+            result.setMetricsConfig(metrics.entrySet());
+        }
         result.setZookeeperConnect(kafkaAssembly.getMetadata().getName() + "-zookeeper:2181");
         result.setStorage(kafka.getStorage());
         result.setUserAffinity(kafka.getAffinity());

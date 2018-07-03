@@ -122,9 +122,11 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.setLivenessInitialDelay(spec.getLivenessProbe().getInitialDelaySeconds());
                 kafkaConnect.setLivenessTimeout(spec.getLivenessProbe().getTimeoutSeconds());
             }
-            kafkaConnect.setMetricsEnabled(spec.getMetrics() != null);
-            if (kafkaConnect.isMetricsEnabled()) {
-                kafkaConnect.setMetricsConfig(spec.getMetrics().entrySet());
+
+            Map<String, Object> metrics = spec.getMetrics();
+            if (metrics != null && !metrics.isEmpty()) {
+                kafkaConnect.setMetricsEnabled(true);
+                kafkaConnect.setMetricsConfig(metrics.entrySet());
             }
             kafkaConnect.setUserAffinity(spec.getAffinity());
         }
