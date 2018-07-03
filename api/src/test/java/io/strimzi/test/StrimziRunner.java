@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -599,7 +600,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                     limits.put("cpu", "1000m").put("memory", "512Mi");
                     resources.set("requests", requests);
                     resources.set("limits", limits);
-                    //containerNode.replace("resources", resources);
+                    containerNode.replace("resources", resources);
                     containerNode.remove("resources");
                     JsonNode ccImageNode = containerNode.get("image");
                     ((ObjectNode) containerNode).put("image", TestUtils.changeOrgAndTag(ccImageNode.asText(), dockerOrg, dockerTag));
@@ -636,12 +637,14 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
             last = new Bracket(last, new ResourceAction().getPo(CO_DEPLOYMENT_NAME + ".*")
                     .logs(CO_DEPLOYMENT_NAME + ".*")
                     .getDep(CO_DEPLOYMENT_NAME)) {
+                Stack<String> deletable = new Stack<>();
                 @Override
                 protected void before() {
                     // Here we record the state of the cluster
                     LOGGER.info("Creating cluster operator {} before test per @ClusterOperator annotation on {}", cc, name(element));
                     for (Map.Entry<File, String> entry: yamls.entrySet()) {
                         LOGGER.info("creating possible modified version of {}", entry.getKey());
+                        deletable.push(entry.getValue());
                         kubeClient().clientWithAdmin().createContent(entry.getValue());
                     }
                     kubeClient().waitForDeployment(CO_DEPLOYMENT_NAME);
@@ -650,9 +653,8 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
                 @Override
                 protected void after() {
                     LOGGER.info("Deleting cluster operator {} after test per @ClusterOperator annotation on {}", cc, name(element));
-                    ArrayList<String> orderedValues = new ArrayList<>(yamls.values());
-                    for (int i = orderedValues.size() - 1; i >= 0; i--) {
-                        kubeClient().clientWithAdmin().deleteContent(orderedValues.get(i));
+                    while (!deletable.isEmpty()) {
+                        kubeClient().clientWithAdmin().deleteContent(deletable.pop());
                     }
                     kubeClient().waitForResourceDeletion("deployment", CO_DEPLOYMENT_NAME);
                 }
