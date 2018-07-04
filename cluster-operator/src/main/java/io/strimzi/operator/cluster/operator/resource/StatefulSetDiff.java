@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
+import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
 
 public class StatefulSetDiff {
@@ -64,8 +65,8 @@ public class StatefulSetDiff {
     private final boolean changesLabels;
     private final boolean changesSpecReplicas;
 
-    public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
-        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
+    public StatefulSetDiff(StatefulSet current, StatefulSet desired) {
+        JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(desired));
         int num = 0;
         boolean changesVolumeClaimTemplate = false;
         boolean changesSpecTemplateSpec = false;
@@ -79,7 +80,12 @@ public class StatefulSetDiff {
                     continue outer;
                 }
             }
-            log.debug("StatefulSet {}/{} differs: {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+            if (log.isDebugEnabled()) {
+                log.debug("StatefulSet {}/{} differs: {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+                log.debug("Current StatefulSet path {} has value {}", pathValue, getFromPath(current, pathValue));
+                log.debug("Desired StatefulSet path {} has value {}", pathValue, getFromPath(desired, pathValue));
+            }
+
             num++;
             changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
             // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
@@ -93,6 +99,27 @@ public class StatefulSetDiff {
         this.changesSpecReplicas = changesSpecReplicas;
         this.changesSpecTemplateSpec = changesSpecTemplateSpec;
         this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
+    }
+
+    private JsonNode getFromPath(StatefulSet current, String pathValue) {
+        JsonNode node1 = patchMapper().valueToTree(current);
+        for (String field : pathValue.replaceFirst("^/", "").split("/")) {
+            JsonNode node2 = node1.get(field);
+            if (node2 == null) {
+                try {
+                    int index = parseInt(field);
+                    node2 = node1.get(index);
+                } catch (NumberFormatException e) {
+                }
+            }
+            if (node2 == null) {
+                node1 = null;
+                break;
+            } else {
+                node1 = node2;
+            }
+        }
+        return node1;
     }
 
     public boolean isEmpty() {
