@@ -78,7 +78,11 @@ public class StatefulSetDiff {
 
     public StatefulSetDiff(StatefulSet current, StatefulSet updated) {
         JsonNode diff = JsonDiff.asJson(patchMapper().valueToTree(current), patchMapper().valueToTree(updated));
-        Set<String> paths = new HashSet<>();
+        int num = 0;
+        boolean changesVolumeClaimTemplate = false;
+        boolean changesSpecTemplateSpec = false;
+        boolean changesLabels = false;
+        boolean changesSpecReplicas = false;
         outer: for (JsonNode d : diff) {
             String pathValue = d.get("path").asText();
             for (Pattern pattern : IGNORABLE_PATHS) {
@@ -87,34 +91,42 @@ public class StatefulSetDiff {
                     continue outer;
                 }
             }
-            log.debug("StatefulSet {}/{} differs at path {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), pathValue);
-            paths.add(pathValue);
+            log.debug("StatefulSet {}/{} differs: {}", current.getMetadata().getNamespace(), current.getMetadata().getName(), d);
+            num++;
+            changesVolumeClaimTemplate |= equalsOrPrefix("/spec/volumeClaimTemplates", pathValue);
+            // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
+            // by k8s
+            changesSpecTemplateSpec |= equalsOrPrefix("/spec/template/spec", pathValue);
+            changesLabels |= equalsOrPrefix("/metadata/labels", pathValue);
+            changesSpecReplicas |= equalsOrPrefix("/spec/replicas", pathValue);
         }
-        isEmpty = paths.isEmpty();
-        changesVolumeClaimTemplate = containsPathOrChild(paths, "/spec/volumeClaimTemplates");
-        // Change changes to /spec/template/spec, except to imagePullPolicy, which gets changed
-        // by k8s
-        changesSpecTemplateSpec = containsPathOrChild(paths, "/spec/template/spec");
-        changesLabels = containsPathOrChild(paths, "/metadata/labels");
-        changesSpecReplicas = containsPathOrChild(paths, "/spec/replicas");
+        this.isEmpty = num == 0;
+        this.changesLabels = changesLabels;
+        this.changesSpecReplicas = changesSpecReplicas;
+        this.changesSpecTemplateSpec = changesSpecTemplateSpec;
+        this.changesVolumeClaimTemplate = changesVolumeClaimTemplate;
     }
 
     public boolean isEmpty() {
         return isEmpty;
     }
 
+    /** Returns true if there's a difference in {@code /spec/volumeClaimTemplates} */
     public boolean changesVolumeClaimTemplates() {
         return changesVolumeClaimTemplate;
     }
 
+    /** Returns true if there's a difference in {@code /spec/template/spec} */
     public boolean changesSpecTemplateSpec() {
         return changesSpecTemplateSpec;
     }
 
+    /** Returns true if there's a difference in {@code /metadata/labels} */
     public boolean changesLabels() {
         return changesLabels;
     }
 
+    /** Returns true if there's a difference in {@code /spec/replicas} */
     public boolean changesSpecReplicas() {
         return changesSpecReplicas;
     }
