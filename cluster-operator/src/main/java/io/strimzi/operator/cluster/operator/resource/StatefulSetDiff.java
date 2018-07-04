@@ -26,6 +26,7 @@ public class StatefulSetDiff {
     static {
         IGNORABLE_PATHS = asList(
             "/spec/revisionHistoryLimit",
+            "/spec/template/metadata/annotations", // Actually it's only the statefulset-generation annotation we care about
             "/spec/template/spec/initContainers/[0-9]+/imagePullPolicy",
             "/spec/template/spec/initContainers/[0-9]+/resources",
             "/spec/template/spec/initContainers/[0-9]+/terminationMessagePath",

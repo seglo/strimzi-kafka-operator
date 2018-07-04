@@ -176,7 +176,9 @@ public class KafkaCluster extends AbstractModel {
                 Labels.fromResource(kafkaAssembly));
         Kafka kafka = kafkaAssembly.getSpec().getKafka();
         result.setReplicas(kafka.getReplicas());
-        result.setImage(kafka.getImage());
+        String image = kafka.getImage();
+        log.debug("#### got kafka image from KafkaAssembly" + image);
+        result.setImage(image);
         if (kafka.getReadinessProbe() != null) {
             result.setReadinessInitialDelay(kafka.getReadinessProbe().getInitialDelaySeconds());
             result.setReadinessTimeout(kafka.getReadinessProbe().getTimeoutSeconds());

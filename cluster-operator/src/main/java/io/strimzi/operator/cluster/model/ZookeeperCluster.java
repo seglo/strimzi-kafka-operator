@@ -118,7 +118,9 @@ public class ZookeeperCluster extends AbstractModel {
                 Labels.fromResource(kafkaAssembly));
         Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
         zk.setReplicas(zookeeper.getReplicas());
-        zk.setImage(zookeeper.getImage());
+        String image = zookeeper.getImage();
+        log.debug("#### got zk image from KafkaAssembly" + image);
+        zk.setImage(image);
         if (zookeeper.getReadinessProbe() != null) {
             zk.setReadinessInitialDelay(zookeeper.getReadinessProbe().getInitialDelaySeconds());
             zk.setReadinessTimeout(zookeeper.getReadinessProbe().getTimeoutSeconds());
