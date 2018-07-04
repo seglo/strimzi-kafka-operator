@@ -10,10 +10,7 @@ import io.fabric8.zjsonpatch.JsonDiff;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -54,15 +51,6 @@ public class StatefulSetDiff {
             "/spec/volumeClaimTemplates/[0-9]+/status",
             "/spec/template/spec/serviceAccount",
             "/status").stream().map(Pattern::compile).collect(Collectors.toList());
-    }
-
-    private static boolean containsPathOrChild(Iterable<String> paths, String path) {
-        for (String pathValue : paths) {
-            if (equalsOrPrefix(path, pathValue)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static boolean equalsOrPrefix(String path, String pathValue) {
