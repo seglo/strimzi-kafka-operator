@@ -19,13 +19,10 @@ import io.fabric8.kubernetes.api.model.extensions.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.extensions.RollingUpdateDeploymentBuilder;
 import io.vertx.core.json.JsonObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 public class KafkaConnectCluster extends AbstractModel {
 
@@ -36,7 +33,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String METRICS_PORT_NAME = "metrics";
 
     private static final String NAME_SUFFIX = "-connect";
-    private static final String METRICS_AND_LOG_CONFIG_SUFFIX = KafkaCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+    private static final String METRICS_CONFIG_SUFFIX = NAME_SUFFIX + "-metrics-config";
 
     // Configuration defaults
     protected static final String DEFAULT_IMAGE =
@@ -56,12 +53,10 @@ public class KafkaConnectCluster extends AbstractModel {
     public static final String KEY_RESOURCES = "resources";
     public static final String KEY_CONNECT_CONFIG = "connect-config";
     public static final String KEY_AFFINITY = "affinity";
-    public static final String KEY_CONNECT_LOG_CONFIG = "logging";
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_CONNECT_CONFIGURATION = "KAFKA_CONNECT_CONFIGURATION";
     protected static final String ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED = "KAFKA_CONNECT_METRICS_ENABLED";
-    protected static final String ENV_VAR_KAFKA_CONNECT_LOGGING = "KAFKA_CONNECT_LOGGING";
 
     /**
      * Constructor
@@ -72,8 +67,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected KafkaConnectCluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         this.name = kafkaConnectClusterName(cluster);
-        this.validLoggerFields = getDefaultLogConfig();
-        this.ancillaryConfigName = logAndMetricsConfigName(cluster);
+        this.metricsConfigName = metricsConfigName(cluster);
         this.image = DEFAULT_IMAGE;
         this.replicas = DEFAULT_REPLICAS;
         this.healthCheckPath = "/";
@@ -82,17 +76,18 @@ public class KafkaConnectCluster extends AbstractModel {
         this.isMetricsEnabled = DEFAULT_KAFKA_CONNECT_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/config/";
+        this.metricsConfigVolumeName = "metrics-config";
+        this.metricsConfigMountPath = "/opt/prometheus/config/";
     }
 
     public static String kafkaConnectClusterName(String cluster) {
         return cluster + KafkaConnectCluster.NAME_SUFFIX;
     }
 
-    public static String logAndMetricsConfigName(String cluster) {
-        return cluster + KafkaConnectCluster.METRICS_AND_LOG_CONFIG_SUFFIX;
+    public static String metricsConfigName(String cluster) {
+        return cluster + KafkaConnectCluster.METRICS_CONFIG_SUFFIX;
     }
+
     /**
      * Create a Kafka Connect cluster from the related ConfigMap resource
      *
@@ -117,7 +112,6 @@ public class KafkaConnectCluster extends AbstractModel {
         if (kafkaConnect.isMetricsEnabled()) {
             kafkaConnect.setMetricsConfig(metricsConfig);
         }
-        kafkaConnect.setLogging(Utils.getLogging(data.get(KEY_CONNECT_LOG_CONFIG)));
 
         kafkaConnect.setConfiguration(Utils.getKafkaConnectConfiguration(data, KEY_CONNECT_CONFIG));
         kafkaConnect.setUserAffinity(Utils.getAffinity(data.get(KEY_AFFINITY)));
@@ -154,9 +148,9 @@ public class KafkaConnectCluster extends AbstractModel {
 
         kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
         if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(logAndMetricsConfigName(cluster));
+            kafkaConnect.setMetricsConfigName(metricsConfigName(cluster));
         }
-        kafkaConnect.setLogConfigName(KafkaCluster.metricAndLogConfigsName(cluster));
+
         return kafkaConnect;
     }
 
@@ -170,17 +164,13 @@ public class KafkaConnectCluster extends AbstractModel {
         return createService("ClusterIP", ports);
     }
 
-    public ConfigMap generateMetricsAndLogConfigMap(ConfigMap cm) {
-        Map<String, String> data  = new HashMap<>();
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parseLogging(getLogging(), cm));
+    public ConfigMap generateMetricsConfigMap() {
         if (isMetricsEnabled()) {
-            data.put(ANCILLARY_CM_KEY_METRICS, getMetricsConfig().toString());
+            Map<String, String> data = Collections.singletonMap(METRICS_CONFIG_FILE, getMetricsConfig().toString());
+            return createConfigMap(getMetricsConfigName(), data);
+        } else {
+            return null;
         }
-        ConfigMap result = createConfigMap(getAncillaryConfigName(), data);
-        if (getLogging() != null) {
-            getLogging().setCm(result);
-        }
-        return result;
     }
 
     protected List<ContainerPort> getContainerPortList() {
@@ -195,14 +185,18 @@ public class KafkaConnectCluster extends AbstractModel {
 
     protected List<Volume> getVolumes() {
         List<Volume> volumeList = new ArrayList<>(1);
-        volumeList.add(createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigName));
+        if (isMetricsEnabled) {
+            volumeList.add(createConfigMapVolume(metricsConfigVolumeName, metricsConfigName));
+        }
 
         return volumeList;
     }
 
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(1);
-        volumeMountList.add(createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        if (isMetricsEnabled) {
+            volumeMountList.add(createVolumeMount(metricsConfigVolumeName, metricsConfigMountPath));
+        }
 
         return volumeMountList;
     }
@@ -239,20 +233,7 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
-        if (getLogging() != null && getLogging().getCm() != null) {
-            varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_LOGGING, getLogging().getCm().toString()));
-        }
-        return varList;
-    }
 
-    @Override
-    protected Properties getDefaultLogConfig() {
-        Properties properties = new Properties();
-        try {
-            properties = getDefaultLoggingProperties("kafkaConnectDefaultLoggingProperties");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return properties;
+        return varList;
     }
 }

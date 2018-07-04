@@ -55,7 +55,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
     private KafkaConnectS2ICluster(String namespace, String cluster, Labels labels) {
         super(namespace, cluster, labels);
         setImage(DEFAULT_IMAGE);
-        this.validLoggerFields = getDefaultLogConfig();
     }
 
     /**
@@ -83,7 +82,6 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         if (kafkaConnect.isMetricsEnabled()) {
             kafkaConnect.setMetricsConfig(metricsConfig);
         }
-        kafkaConnect.setLogging(Utils.getLogging(data.get(KEY_CONNECT_LOG_CONFIG)));
 
         return kafkaConnect;
     }
@@ -116,11 +114,10 @@ public class KafkaConnectS2ICluster extends KafkaConnectCluster {
         kafkaConnect.setImage(sourceImage);
 
         Map<String, String> vars = containerEnvVars(container);
-        kafkaConnect.setLogConfigName(KafkaCluster.metricAndLogConfigsName(cluster));
 
         kafkaConnect.setMetricsEnabled(Utils.getBoolean(vars, ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, DEFAULT_KAFKA_CONNECT_METRICS_ENABLED));
         if (kafkaConnect.isMetricsEnabled()) {
-            kafkaConnect.setMetricsConfigName(logAndMetricsConfigName(cluster));
+            kafkaConnect.setMetricsConfigName(metricsConfigName(cluster));
         }
 
         TagImportPolicy policy = sis.getSpec().getTags().get(0).getImportPolicy();

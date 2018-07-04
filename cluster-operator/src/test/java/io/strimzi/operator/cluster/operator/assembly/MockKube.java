@@ -53,7 +53,6 @@ import org.mockito.stubbing.OngoingStubbing;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -396,9 +395,9 @@ public class MockKube {
     }
 
     private static <T extends HasMetadata, D extends Doneable<T>> Map<String, T> db(Collection<T> initialResources, Class<T> cls, Class<D> doneableClass) {
-        return Collections.synchronizedMap(new HashMap(initialResources.stream().collect(Collectors.toMap(
+        return new HashMap(initialResources.stream().collect(Collectors.toMap(
             c -> c.getMetadata().getName(),
-            c -> copyResource(c, cls, doneableClass)))));
+            c -> copyResource(c, cls, doneableClass))));
     }
 
     private static <T extends HasMetadata, D extends Doneable<T>> T copyResource(T resource, Class<T> resourceClass, Class<D> doneableClass) {
@@ -487,10 +486,7 @@ public class MockKube {
 
         private KubernetesResourceList<CM> mockList(Predicate<? super CM> predicate) {
             KubernetesResourceList<CM> l = mock(listClass);
-            Collection<CM> values;
-            synchronized (db) {
-                values = db.values().stream().filter(predicate).map(resource -> copyResource(resource)).collect(Collectors.toList());
-            }
+            Collection<CM> values = db.values().stream().filter(predicate).map(resource -> copyResource(resource)).collect(Collectors.toList());
             when(l.getItems()).thenAnswer(i3 -> {
                 LOGGER.debug("{} list -> {}", resourceTypeClass.getSimpleName(), values);
                 return values;
