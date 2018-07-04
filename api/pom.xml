@@ -123,7 +123,7 @@
                                 <argument>https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaAssembly=appendix_kafka_crd.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=appendix_kafka_connect_crd.adoc</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=appendix_kafka_connect_s2i__crd.adoc</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=appendix_kafka_connect_s2i_crd.adoc</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}/../documentation/book</workingDirectory>
                         </configuration>
