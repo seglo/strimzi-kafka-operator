@@ -12,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.strimzi.crdgenerator.annotations.Description;
 
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +42,7 @@ public abstract class Storage {
     }
 
     @JsonAnySetter
-    public void setAdditionalProperty(String name, Object value) throws URISyntaxException {
+    public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
     }
 

@@ -28,7 +28,6 @@ public class Rack {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     public Rack() {
-
     }
 
     public Rack(String topologyKey) {
