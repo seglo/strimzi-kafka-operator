@@ -64,7 +64,6 @@ objects:
   metadata:
     name: ${CLUSTER_NAME}
   spec:
-    someExtraThing: true
     kafka:
       replicas: ${KAFKA_NODE_COUNT}
       image: "strimzi/kafka:latest"
