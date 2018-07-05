@@ -117,8 +117,15 @@ public class ZookeeperCluster extends AbstractModel {
         ZookeeperCluster zk = new ZookeeperCluster(kafkaAssembly.getMetadata().getNamespace(), kafkaAssembly.getMetadata().getName(),
                 Labels.fromResource(kafkaAssembly));
         Zookeeper zookeeper = kafkaAssembly.getSpec().getZookeeper();
-        zk.setReplicas(zookeeper.getReplicas());
+        int replicas = zookeeper.getReplicas();
+        if (replicas <= 0) {
+            replicas = Zookeeper.DEFAULT_REPLICAS;
+        }
+        zk.setReplicas(replicas);
         String image = zookeeper.getImage();
+        if (image == null) {
+            image = Zookeeper.DEFAULT_IMAGE;
+        }
         log.debug("#### got zk image from KafkaAssembly" + image);
         zk.setImage(image);
         if (zookeeper.getReadinessProbe() != null) {

@@ -41,11 +41,6 @@ public class Kafka extends ReplicatedJvmPods {
 
     private Rack rack;
 
-
-    public Kafka() {
-        this.setImage(DEFAULT_IMAGE);
-    }
-
     @Description("The kafka broker config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES)
     public Map<String, Object> getConfig() {
         return config;
