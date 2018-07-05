@@ -134,8 +134,12 @@ public final class TestUtils {
     }
 
     public static String readFile(String fileName) {
+        return readFile(new File(fileName));
+    }
+
+    public static String readFile(File file) {
         try {
-            URL url = new File(fileName).toURI().toURL();
+            URL url = file.toURI().toURL();
             if (url == null) {
                 return null;
             } else {
@@ -194,6 +198,17 @@ public final class TestUtils {
         ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
         try {
             return mapper.readValue(yamlContent, c);
+        } catch (InvalidFormatException e) {
+            throw new IllegalArgumentException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T fromYamlFile(File yamlFile, Class<T> c, boolean ignoreUnknownProperties) {
+        ObjectMapper mapper = new YAMLMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, !ignoreUnknownProperties);
+        try {
+            return mapper.readValue(yamlFile, c);
         } catch (InvalidFormatException e) {
             throw new IllegalArgumentException(e);
         } catch (IOException e) {

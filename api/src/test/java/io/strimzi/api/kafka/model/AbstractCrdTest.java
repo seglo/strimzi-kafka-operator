@@ -4,23 +4,39 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.test.TestUtils;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-public abstract class AbstractCrdTest<R extends HasMetadata> {
+public abstract class AbstractCrdTest<R extends CustomResource, T extends VisitableBuilder<R, T>> {
 
     private final Class<R> crdClass;
+    private final String kind;
+    private final Class<T> visitorClass;
 
-    protected AbstractCrdTest(Class<R> crdClass) {
+    protected AbstractCrdTest(Class<R> crdClass, Class<T> visitorClass) {
         this.crdClass = crdClass;
+        this.visitorClass = visitorClass;
+        try {
+            this.kind = crdClass.newInstance().getKind();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void assertDesiredResource(R k, String resource) throws IOException {
@@ -44,4 +60,5 @@ public abstract class AbstractCrdTest<R extends HasMetadata> {
         assertDesiredResource(model, crdClass.getSimpleName() + ".out.yaml");
         assertDesiredResource(TestUtils.fromYamlString(TestUtils.toYamlString(model), crdClass), crdClass.getSimpleName() + ".out.yaml");
     }
+
 }

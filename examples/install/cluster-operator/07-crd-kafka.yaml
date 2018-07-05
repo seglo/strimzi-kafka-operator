@@ -56,8 +56,6 @@ spec:
                     type:
                       type: string
                       description: Must be `persistent-claim`
-                  required:
-                  - size
                 brokerRackInitImage:
                   type: string
                   description: The image of the init container used for initializing
@@ -442,8 +440,6 @@ spec:
                     type:
                       type: string
                       description: Must be `persistent-claim`
-                  required:
-                  - size
                 livenessProbe:
                   description: Pod liveness checking.
                   type: object

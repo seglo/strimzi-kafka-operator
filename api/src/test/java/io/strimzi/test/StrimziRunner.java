@@ -473,7 +473,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     }
 
     private Statement withConnectClusters(Annotatable element,
-                                        Statement statement) {
+                                          Statement statement) {
         Statement last = statement;
         for (ConnectCluster cluster : annotations(element, ConnectCluster.class)) {
             // use the example kafka-connect.yaml as a template, but modify it according to the annotation

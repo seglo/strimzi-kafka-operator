@@ -101,6 +101,6 @@ objects:
         timeoutSeconds: ${ZOOKEEPER_HEALTHCHECK_TIMEOUT}
       storage:
         type: persistent-claim
-        size: "${ZOOKEEPER_VOLUME_CAPACITY}",
+        size: "${ZOOKEEPER_VOLUME_CAPACITY}"
         deleteClaim: false
     topicOperator:
