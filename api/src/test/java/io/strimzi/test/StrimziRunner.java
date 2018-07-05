@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaAssembly;
+import io.strimzi.api.kafka.model.KafkaConnectAssembly;
 import io.strimzi.test.k8s.BaseKubeClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterException;
@@ -68,7 +69,7 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
      */
     public static final String NOTEARDOWN = "NOTEARDOWN";
     public static final String KAFKA_PERSISTENT_YAML = "../examples/kafka/kafka-persistent.yaml";
-    public static final String KAFKA_CONNECT_CM = "../examples/configmaps/cluster-operator/kafka-connect.yaml";
+    public static final String KAFKA_CONNECT_YAML = "../examples/kafka-connect/kafka-connect.yaml";
     public static final String CO_INSTALL_DIR = "../examples/install/cluster-operator";
     public static final String CO_DEPLOYMENT_NAME = "strimzi-cluster-operator";
     public static final String TOPIC_CM = "../examples/configmaps/topic-operator/kafka-topic-configmap.yaml";
@@ -475,42 +476,38 @@ public class StrimziRunner extends BlockJUnit4ClassRunner {
     private Statement withConnectClusters(Annotatable element,
                                           Statement statement) {
         Statement last = statement;
-        for (ConnectCluster cluster : annotations(element, ConnectCluster.class)) {
-            // use the example kafka-connect.yaml as a template, but modify it according to the annotation
-            String yaml = getContent(new File(KAFKA_CONNECT_CM), node -> {
-                JsonNode metadata = node.get("metadata");
-                ((ObjectNode) metadata).put("name", cluster.name());
-                JsonNode data = node.get("data");
-                ((ObjectNode) data).put("nodes", String.valueOf(cluster.nodes()));
-                ((ObjectNode) data).put("connect-config", cluster.connectConfig());
-                // updates values for ConfigMap
-                for (CmData cmData : cluster.config()) {
-                    ((ObjectNode) data).put(cmData.key(), cmData.value());
-                }
-            });
-            final String deploymentName = cluster.name() + "-connect";
-            last = new Bracket(last, new ResourceAction()
-                    .getDep(deploymentName)
-                    .getPo(deploymentName + ".*")
-                    .logs(deploymentName + ".*")) {
-                @Override
-                protected void before() {
-                    LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", cluster.name(), name(element));
-                    // create cm
-                    kubeClient().createContent(yaml);
-                    // wait for deployment
-                    kubeClient().waitForDeployment(deploymentName);
-                }
+        KafkaConnectFromClasspathYaml cluster = element.getAnnotation(KafkaConnectFromClasspathYaml.class);
+        if (cluster != null) {
+            String[] resources = cluster.value().length == 0 ? new String[]{classpathResourceName(element)} : cluster.value();
+            for (String resource : resources) {
+                // use the example kafka-ephemeral as a template, but modify it according to the annotation
+                String yaml = TestUtils.readResource(testClass(element), resource);
+                KafkaConnectAssembly kafkaAssembly = TestUtils.fromYamlString(yaml, KafkaConnectAssembly.class);
+                String clusterName = kafkaAssembly.getMetadata().getName();
+                final String deploymentName = clusterName + "-connect";
+                last = new Bracket(last, new ResourceAction()
+                        .getDep(deploymentName)
+                        .getPo(deploymentName + ".*")
+                        .logs(deploymentName + ".*")) {
+                    @Override
+                    protected void before() {
+                        LOGGER.info("Creating connect cluster '{}' before test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // create cm
+                        kubeClient().createContent(yaml);
+                        // wait for deployment
+                        kubeClient().waitForDeployment(deploymentName);
+                    }
 
-                @Override
-                protected void after() {
-                    LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", cluster.name(), name(element));
-                    // delete cm
-                    kubeClient().deleteContent(yaml);
-                    // wait for ss to go
-                    kubeClient().waitForResourceDeletion("deployment", deploymentName);
-                }
-            };
+                    @Override
+                    protected void after() {
+                        LOGGER.info("Deleting connect cluster '{}' after test per @ConnectCluster annotation on {}", clusterName, name(element));
+                        // delete cm
+                        kubeClient().deleteContent(yaml);
+                        // wait for ss to go
+                        kubeClient().waitForResourceDeletion("deployment", deploymentName);
+                    }
+                };
+            }
         }
         return last;
     }

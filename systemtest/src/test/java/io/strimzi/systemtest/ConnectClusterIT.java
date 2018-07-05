@@ -7,9 +7,8 @@ package io.strimzi.systemtest;
 import io.fabric8.kubernetes.api.model.Event;
 import io.strimzi.api.kafka.model.JsonUtils;
 import io.strimzi.test.ClusterOperator;
-import io.strimzi.test.CmData;
-import io.strimzi.test.ConnectCluster;
 import io.strimzi.test.JUnitGroup;
+import io.strimzi.test.KafkaConnectFromClasspathYaml;
 import io.strimzi.test.KafkaFromClasspathYaml;
 import io.strimzi.test.Namespace;
 import io.strimzi.test.OpenShiftOnly;
@@ -91,7 +90,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "acceptance")
-    @ConnectCluster(name = "my-cluster", connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testDeployUndeploy() {
         LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
 
@@ -105,13 +104,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = "jvm-resource", connectConfig = CONNECT_CONFIG,
-        nodes = 1,
-        config = {
-                @CmData(key = "resources", value = "{ \"limits\": {\"memory\": \"400M\", \"cpu\": 2}, " +
-                        "\"requests\": {\"memory\": \"300M\", \"cpu\": 1} }"),
-                @CmData(key = "jvmOptions", value = "{\"-Xmx\": \"200m\", \"-Xms\": \"200m\", \"-server\": true, \"-XX\": { \"UseG1GC\": true }}")
-        })
+    @KafkaConnectFromClasspathYaml
     public void testJvmAndResources() {
         String podName = kubeClient.list("Pod").stream().filter(n -> n.startsWith("jvm-resource-connect-")).findFirst().get();
         assertResources(NAMESPACE, podName,
@@ -122,7 +115,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testKafkaConnectScaleUpScaleDown() {
         // kafka cluster Connect already deployed via annotation
         LOGGER.info("Running kafkaConnectScaleUP {}", CONNECT_CLUSTER_NAME);
@@ -164,7 +157,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
 
     @Test
     @JUnitGroup(name = "regression")
-    @ConnectCluster(name = CONNECT_CLUSTER_NAME, connectConfig = CONNECT_CONFIG)
+    @KafkaConnectFromClasspathYaml
     public void testForUpdateValuesInConnectCM() {
         List<String> connectPods = kubeClient.listResourcesByLabel("pod", "strimzi.io/type=kafka-connect");
 
