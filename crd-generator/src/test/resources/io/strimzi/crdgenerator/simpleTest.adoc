@@ -1,6 +1,6 @@
-[[crdgenerator.strimzi.io-v1alpha1-kind-Example]]
-[[crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd]]
-# `Example` v1alpha1 crdgenerator.strimzi.io
+[[kind-Example]]
+[[type-ExampleCrd]]
+# `Example` kind v1alpha1 crdgenerator.strimzi.io
 
 
 [options="header"]
@@ -11,9 +11,9 @@
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
 |arrayOfBoundTypeVar     1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |arrayOfBoundTypeVar2    1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |arrayOfList             1.2+<.<|
 |string array of dimension 2
 |arrayOfRawList          1.2+<.<|
@@ -33,17 +33,17 @@
 |listOfArray             1.2+<.<|
 |string array of dimension 2
 |listOfBoundTypeVar      1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |listOfBoundTypeVar2     1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |listOfInts              1.2+<.<|
 |integer array
 |listOfInts2             1.2+<.<|
 |integer array of dimension 2
 |listOfObjects           1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-ObjectProperty,`ObjectProperty`>> array
+|<<type-ObjectProperty,`ObjectProperty`>> array
 |listOfPolymorphic       1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicLeft,`PolymorphicLeft`>>, <<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicRight,`PolymorphicRight`>> array
+|<<type-PolymorphicLeft,`PolymorphicLeft`>>, <<type-PolymorphicRight,`PolymorphicRight`>> array
 |listOfRawList           1.2+<.<|
 |object array of dimension 2
 |listOfTypeVar           1.2+<.<|
@@ -51,29 +51,29 @@
 |listOfWildcardTypeVar1  1.2+<.<|
 |string array
 |listOfWildcardTypeVar2  1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |listOfWildcardTypeVar3  1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array
+|<<type-Number,`Number`>> array
 |listOfWildcardTypeVar4  1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-Number,`Number`>> array of dimension 2
+|<<type-Number,`Number`>> array of dimension 2
 |longProperty            1.2+<.<|An example long property
 |integer
 |mapProperty             1.2+<.<|
 |map
 |objectProperty          1.2+<.<|
-|<<crdgenerator.strimzi.io-v1alpha1-type-ObjectProperty,`ObjectProperty`>>
+|<<type-ObjectProperty,`ObjectProperty`>>
 |polymorphicProperty     1.2+<.<| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right]
-|<<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicLeft,`PolymorphicLeft`>>, <<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicRight,`PolymorphicRight`>>
+|<<type-PolymorphicLeft,`PolymorphicLeft`>>, <<type-PolymorphicRight,`PolymorphicRight`>>
 |rawList                 1.2+<.<|
 |object array
 |stringProperty          1.2+<.<|
 |string
 |====
 
-[[crdgenerator.strimzi.io-v1alpha1-type-Number]]
-# `Number` v1alpha1 crdgenerator.strimzi.io
+[[type-Number]]
+# `Number` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd,`ExampleCrd`>>
+Used in: <<kind-Example,`ExampleCrd`>>
 
 
 [options="header"]
@@ -81,10 +81,10 @@ Used in: <<crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd,`ExampleCrd`>>
 |Field|Description
 |====
 
-[[crdgenerator.strimzi.io-v1alpha1-type-ObjectProperty]]
-# `ObjectProperty` v1alpha1 crdgenerator.strimzi.io
+[[type-ObjectProperty]]
+# `ObjectProperty` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd,`ExampleCrd`>>
+Used in: <<kind-Example,`ExampleCrd`>>
 
 Example of complex type.
 
@@ -97,13 +97,13 @@ Example of complex type.
 |string
 |====
 
-[[crdgenerator.strimzi.io-v1alpha1-type-PolymorphicLeft]]
-# `PolymorphicLeft` v1alpha1 crdgenerator.strimzi.io
+[[type-PolymorphicLeft]]
+# `PolymorphicLeft` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd,`ExampleCrd`>>
+Used in: <<kind-Example,`ExampleCrd`>>
 
 
-The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicLeft` from <<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicRight,`PolymorphicRight`>>.
+The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicLeft` from <<type-PolymorphicRight,`PolymorphicRight`>>.
 It must have the value `left` for the type `PolymorphicLeft`.
 [options="header"]
 |====
@@ -116,13 +116,13 @@ It must have the value `left` for the type `PolymorphicLeft`.
 |string
 |====
 
-[[crdgenerator.strimzi.io-v1alpha1-type-PolymorphicRight]]
-# `PolymorphicRight` v1alpha1 crdgenerator.strimzi.io
+[[type-PolymorphicRight]]
+# `PolymorphicRight` type v1alpha1 crdgenerator.strimzi.io
 
-Used in: <<crdgenerator.strimzi.io-v1alpha1-type-ExampleCrd,`ExampleCrd`>>
+Used in: <<kind-Example,`ExampleCrd`>>
 
 
-The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicRight` from <<crdgenerator.strimzi.io-v1alpha1-type-PolymorphicLeft,`PolymorphicLeft`>>.
+The `discrim` property is a discriminator that distinguishes the use of the type `PolymorphicRight` from <<type-PolymorphicLeft,`PolymorphicLeft`>>.
 It must have the value `right` for the type `PolymorphicRight`.
 [options="header"]
 |====

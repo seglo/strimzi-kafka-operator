@@ -121,9 +121,10 @@
                                 <argument>--linker</argument>
                                 <argument>io.strimzi.crdgenerator.KubeLinker</argument>
                                 <argument>https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaAssembly=appendix_kafka_crd.adoc</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly=appendix_kafka_connect_crd.adoc</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly=appendix_kafka_connect_s2i_crd.adoc</argument>
+                                <argument>appendix_crds.adoc</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaAssembly</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectAssembly</argument>
+                                <argument>io.strimzi.api.kafka.model.KafkaConnectS2IAssembly</argument>
                             </arguments>
                             <workingDirectory>${pom.basedir}/../documentation/book</workingDirectory>
                         </configuration>

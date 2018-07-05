@@ -1,40 +1,40 @@
-[[kafka.strimzi.io-v1alpha1-kind-Kafka]]
-[[kafka.strimzi.io-v1alpha1-type-KafkaAssembly]]
-### `Kafka` v1alpha1 kafka.strimzi.io
+[[kind-Kafka]]
+[[type-KafkaAssembly]]
+### `Kafka` kind v1alpha1 kafka.strimzi.io
 
 
 [options="header"]
 |====
 |Field                        |Description
 |spec                  1.2+<.<|
-|<<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+|<<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 |additionalProperties  1.2+<.<|
 |map
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec]]
-### `KafkaAssemblySpec` v1alpha1 kafka.strimzi.io
+[[type-KafkaAssemblySpec]]
+### `KafkaAssemblySpec` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssembly,`KafkaAssembly`>>
+Used in: <<kind-Kafka,`KafkaAssembly`>>
 
 
 [options="header"]
 |====
 |Field                        |Description
 |kafka                 1.2+<.<|Configuration of the Kafka cluster
-|<<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
+|<<type-Kafka,`Kafka`>>
 |zookeeper             1.2+<.<|Configuration of the Zookeeper cluster
-|<<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+|<<type-Zookeeper,`Zookeeper`>>
 |topicOperator         1.2+<.<|Configuration of the Topic Operator
-|<<kafka.strimzi.io-v1alpha1-type-TopicOperator,`TopicOperator`>>
+|<<type-TopicOperator,`TopicOperator`>>
 |additionalProperties  1.2+<.<|
 |map
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-Kafka]]
-### `Kafka` v1alpha1 kafka.strimzi.io
+[[type-Kafka]]
+### `Kafka` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 
 [options="header"]
@@ -45,15 +45,15 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |image                 1.2+<.<|The docker image for the pods.
 |string
 |storage               1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
-|<<kafka.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
 |brokerRackInitImage   1.2+<.<|The image of the init container used for initializing the `broker.rack`.
 |string
 |livenessProbe         1.2+<.<|Pod liveness checking.
-|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|<<type-Probe,`Probe`>>
 |readinessProbe        1.2+<.<|Pod readiness checking.
-|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|<<type-Probe,`Probe`>>
 |jvmOptions            1.2+<.<|JVM Options for pods
-|<<kafka.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
+|<<type-JvmOptions,`JvmOptions`>>
 |affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
@@ -65,18 +65,18 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |config                1.2+<.<|The kafka broker config. Properties with the following prefixes cannot be set: listeners, advertised., broker., listener., host.name, port, inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, zookeeper.connect, zookeeper.set.acl, authorizer., super.user
 |map
 |rack                  1.2+<.<|Configuration of the `broker.rack` broker config.
-|<<kafka.strimzi.io-v1alpha1-type-Rack,`Rack`>>
+|<<type-Rack,`Rack`>>
 |resources             1.2+<.<|Resource constraints (limits and requests).
-|<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|<<type-Resources,`Resources`>>
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-EphemeralStorage]]
-### `EphemeralStorage` v1alpha1 kafka.strimzi.io
+[[type-EphemeralStorage]]
+### `EphemeralStorage` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+Used in: <<type-Kafka,`Kafka`>>, <<type-Zookeeper,`Zookeeper`>>
 
 
-The `type` property is a discriminator that distinguishes the use of the type `EphemeralStorage` from <<kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>.
+The `type` property is a discriminator that distinguishes the use of the type `EphemeralStorage` from <<type-PersistentClaimStorage,`PersistentClaimStorage`>>.
 It must have the value `ephemeral` for the type `EphemeralStorage`.
 [options="header"]
 |====
@@ -87,13 +87,13 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 |string
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage]]
-### `PersistentClaimStorage` v1alpha1 kafka.strimzi.io
+[[type-PersistentClaimStorage]]
+### `PersistentClaimStorage` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+Used in: <<type-Kafka,`Kafka`>>, <<type-Zookeeper,`Zookeeper`>>
 
 
-The `type` property is a discriminator that distinguishes the use of the type `PersistentClaimStorage` from <<kafka.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>.
+The `type` property is a discriminator that distinguishes the use of the type `PersistentClaimStorage` from <<type-EphemeralStorage,`EphemeralStorage`>>.
 It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 [options="header"]
 |====
@@ -112,10 +112,10 @@ It must have the value `persistent-claim` for the type `PersistentClaimStorage`.
 |string
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-Probe]]
-### `Probe` v1alpha1 kafka.strimzi.io
+[[type-Probe]]
+### `Probe` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Zookeeper,`Zookeeper`>>
 
 
 [options="header"]
@@ -129,10 +129,10 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |integer
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-JvmOptions]]
-### `JvmOptions` v1alpha1 kafka.strimzi.io
+[[type-JvmOptions]]
+### `JvmOptions` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-Zookeeper,`Zookeeper`>>
 
 
 [options="header"]
@@ -148,10 +148,10 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |boolean
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-Rack]]
-### `Rack` v1alpha1 kafka.strimzi.io
+[[type-Rack]]
+### `Rack` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
+Used in: <<type-Kafka,`Kafka`>>
 
 
 [options="header"]
@@ -163,10 +163,10 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>
 |string
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-Resources]]
-### `Resources` v1alpha1 kafka.strimzi.io
+[[type-Resources]]
+### `Resources` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1alpha1-type-TopicOperator,`TopicOperator`>>, <<kafka.strimzi.io-v1alpha1-type-Zookeeper,`Zookeeper`>>
+Used in: <<type-Kafka,`Kafka`>>, <<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>, <<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>, <<type-TopicOperator,`TopicOperator`>>, <<type-Zookeeper,`Zookeeper`>>
 
 
 [options="header"]
@@ -175,15 +175,15 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Kafka,`Kafka`>>, <<kafka.strimzi.io-v1
 |additionalProperties  1.2+<.<|
 |map
 |limits                1.2+<.<|Resource limits applied at runtime.
-|<<kafka.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|<<type-CpuMemory,`CpuMemory`>>
 |requests              1.2+<.<|Resource requests applied during pod scheduling.
-|<<kafka.strimzi.io-v1alpha1-type-CpuMemory,`CpuMemory`>>
+|<<type-CpuMemory,`CpuMemory`>>
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-CpuMemory]]
-### `CpuMemory` v1alpha1 kafka.strimzi.io
+[[type-CpuMemory]]
+### `CpuMemory` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+Used in: <<type-Resources,`Resources`>>
 
 
 [options="header"]
@@ -197,10 +197,10 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
 |string
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-Zookeeper]]
-### `Zookeeper` v1alpha1 kafka.strimzi.io
+[[type-Zookeeper]]
+### `Zookeeper` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 
 [options="header"]
@@ -211,13 +211,13 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |image                 1.2+<.<|The docker image for the pods.
 |string
 |storage               1.2+<.<|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim]
-|<<kafka.strimzi.io-v1alpha1-type-EphemeralStorage,`EphemeralStorage`>>, <<kafka.strimzi.io-v1alpha1-type-PersistentClaimStorage,`PersistentClaimStorage`>>
+|<<type-EphemeralStorage,`EphemeralStorage`>>, <<type-PersistentClaimStorage,`PersistentClaimStorage`>>
 |livenessProbe         1.2+<.<|Pod liveness checking.
-|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|<<type-Probe,`Probe`>>
 |readinessProbe        1.2+<.<|Pod readiness checking.
-|<<kafka.strimzi.io-v1alpha1-type-Probe,`Probe`>>
+|<<type-Probe,`Probe`>>
 |jvmOptions            1.2+<.<|JVM Options for pods
-|<<kafka.strimzi.io-v1alpha1-type-JvmOptions,`JvmOptions`>>
+|<<type-JvmOptions,`JvmOptions`>>
 |affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
 
 
@@ -229,13 +229,13 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 |config                1.2+<.<|The zookeeper broker config. Properties with the following prefixes cannot be set: server., dataDir, dataLogDir, clientPort, authProvider, quorum.auth, requireClientAuthScheme
 |map
 |resources             1.2+<.<|Resource constraints (limits and requests).
-|<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|<<type-Resources,`Resources`>>
 |====
 
-[[kafka.strimzi.io-v1alpha1-type-TopicOperator]]
-### `TopicOperator` v1alpha1 kafka.strimzi.io
+[[type-TopicOperator]]
+### `TopicOperator` type v1alpha1 kafka.strimzi.io
 
-Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
+Used in: <<type-KafkaAssemblySpec,`KafkaAssemblySpec`>>
 
 
 [options="header"]
@@ -254,10 +254,106 @@ Used in: <<kafka.strimzi.io-v1alpha1-type-KafkaAssemblySpec,`KafkaAssemblySpec`>
 
 |https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
 |resources                       1.2+<.<|
-|<<kafka.strimzi.io-v1alpha1-type-Resources,`Resources`>>
+|<<type-Resources,`Resources`>>
 |topicMetadataMaxAttempts        1.2+<.<|The number of attempts at getting topic metadata
 |integer
 |additionalProperties            1.2+<.<|
 |map
+|====
+
+[[kind-KafkaConnect]]
+[[type-KafkaConnectAssembly]]
+### `KafkaConnect` kind v1alpha1 kafka.strimzi.io
+
+
+[options="header"]
+|====
+|Field                        |Description
+|spec                  1.2+<.<|
+|<<type-KafkaConnectAssemblySpec,`KafkaConnectAssemblySpec`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[type-KafkaConnectAssemblySpec]]
+### `KafkaConnectAssemblySpec` type v1alpha1 kafka.strimzi.io
+
+Used in: <<kind-KafkaConnect,`KafkaConnectAssembly`>>
+
+
+[options="header"]
+|====
+|Field                        |Description
+|replicas              1.2+<.<|
+|integer
+|image                 1.2+<.<|The docker image for the pods.
+|string
+|livenessProbe         1.2+<.<|Pod liveness checking.
+|<<type-Probe,`Probe`>>
+|readinessProbe        1.2+<.<|Pod readiness checking.
+|<<type-Probe,`Probe`>>
+|jvmOptions            1.2+<.<|JVM Options for pods
+|<<type-JvmOptions,`JvmOptions`>>
+|affinity              1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|metrics               1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|additionalProperties  1.2+<.<|
+|map
+|config                1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
+|map
+|resources             1.2+<.<|Resource constraints (limits and requests).
+|<<type-Resources,`Resources`>>
+|====
+
+[[kind-KafkaConnectS2I]]
+[[type-KafkaConnectS2IAssembly]]
+### `KafkaConnectS2I` kind v1alpha1 kafka.strimzi.io
+
+
+[options="header"]
+|====
+|Field                        |Description
+|spec                  1.2+<.<|
+|<<type-KafkaConnectS2IAssemblySpec,`KafkaConnectS2IAssemblySpec`>>
+|additionalProperties  1.2+<.<|
+|map
+|====
+
+[[type-KafkaConnectS2IAssemblySpec]]
+### `KafkaConnectS2IAssemblySpec` type v1alpha1 kafka.strimzi.io
+
+Used in: <<kind-KafkaConnectS2I,`KafkaConnectS2IAssembly`>>
+
+
+[options="header"]
+|====
+|Field                            |Description
+|replicas                  1.2+<.<|
+|integer
+|image                     1.2+<.<|The docker image for the pods.
+|string
+|livenessProbe             1.2+<.<|Pod liveness checking.
+|<<type-Probe,`Probe`>>
+|readinessProbe            1.2+<.<|Pod readiness checking.
+|<<type-Probe,`Probe`>>
+|jvmOptions                1.2+<.<|JVM Options for pods
+|<<type-JvmOptions,`JvmOptions`>>
+|affinity                  1.2+<.<|Pod affinity rules.See external documentation of https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[core/v1 affinity]
+
+
+|https://v1-9.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.9/#affinity-v1-core[Affinity]
+|metrics                   1.2+<.<|The Prometheus JMX Exporter configuration. See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.
+|map
+|additionalProperties      1.2+<.<|
+|map
+|config                    1.2+<.<|The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest.
+|map
+|insecureSourceRepository  1.2+<.<|
+|boolean
+|resources                 1.2+<.<|Resource constraints (limits and requests).
+|<<type-Resources,`Resources`>>
 |====
 

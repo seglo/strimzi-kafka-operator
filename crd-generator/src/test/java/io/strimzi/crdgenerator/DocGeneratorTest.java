@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.net.URISyntaxException;
 
 import static io.strimzi.crdgenerator.DocGenerator.classInherits;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -20,8 +21,8 @@ public class DocGeneratorTest {
     public void simpleTest() throws IOException, ClassNotFoundException, URISyntaxException {
         assertTrue(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class) != null);
         StringWriter w = new StringWriter();
-        DocGenerator crdGenerator = new DocGenerator(1, ExampleCrd.class, w, new KubeLinker("{KubeApiReferenceBase}"));
-        crdGenerator.generate();
+        DocGenerator crdGenerator = new DocGenerator(1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));
+        crdGenerator.generate(ExampleCrd.class);
         String s = w.toString();
         assertEquals(CrdTestUtils.readResource("simpleTest.adoc"), s);
     }

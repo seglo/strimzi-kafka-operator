@@ -42,21 +42,19 @@ public class DocGenerator {
 
     private final int headerDepth;
     private final Appendable out;
-    private final Class<? extends CustomResource> crdClass;
-    private final Crd crd;
 
     private Set<Class<?>> documentedTypes = new HashSet<>();
     private HashMap<Class<?>, Set<Class<?>>> usedIn;
     private Linker linker;
 
-    public DocGenerator(int headerDepth, Class<? extends CustomResource> crdClass, Appendable out, Linker linker) {
+    public DocGenerator(int headerDepth, Iterable<Class<? extends CustomResource>> crdClasses, Appendable out, Linker linker) {
         this.out = out;
-        this.crdClass = crdClass;
-        this.crd = crdClass.getAnnotation(Crd.class);
         this.headerDepth = headerDepth;
         this.linker = linker;
         this.usedIn = new HashMap<>();
-        usedIn(crdClass, usedIn);
+        for (Class<? extends CustomResource> crdClass: crdClasses) {
+            usedIn(crdClass, usedIn);
+        }
     }
 
     private void appendAnchor(Crd crd) throws IOException {
@@ -64,26 +62,22 @@ public class DocGenerator {
     }
 
     private String anchor(Crd crd) {
-        return anchorPrefix() + "kind-" + crd.spec().names().kind();
+        return "kind-" + crd.spec().names().kind();
     }
 
-    private void appendAnchor(Class<?> anchor) throws IOException {
+    private void appendAnchor(Crd crd, Class<?> anchor) throws IOException {
         out.append("[[").append(anchor(anchor)).append("]]").append(NL);
     }
 
     private String anchor(Class<?> anchor) {
-        return anchorPrefix() + "type-" + anchor.getSimpleName();
+        return "type-" + anchor.getSimpleName();
     }
 
-    private String anchorPrefix() {
-        return crd.spec().group() + "-" + crd.spec().version() + "-";
-    }
-
-    private void appendHeading(String name) throws IOException {
+    private void appendHeading(Crd crd, String name) throws IOException {
         appendRepeated('#', headerDepth);
-        out.append(" `");
+        out.append(' ');
         out.append(name);
-        out.append("` ");
+        out.append(' ');
         out.append(crd.spec().version());
         out.append(' ');
         out.append(crd.spec().group());
@@ -117,23 +111,24 @@ public class DocGenerator {
         return isPolymorphic(returnType) ? subtypes(returnType) : singletonList(returnType);
     }
 
-    public void generate() throws IOException {
+    public void generate(Class<? extends CustomResource> crdClass) throws IOException {
+        Crd crd = crdClass.getAnnotation(Crd.class);
         appendAnchor(crd);
-        appendAnchor(crdClass);
-        appendHeading(crd.spec().names().kind());
-        appendCommonTypeDoc(crdClass);
+        appendAnchor(crd, crdClass);
+        appendHeading(crd, "`" + crd.spec().names().kind() + "` kind");
+        appendCommonTypeDoc(crd, crdClass);
     }
 
-    private void appendedNestedTypeDoc(Class<?> cls) throws IOException {
-        appendAnchor(cls);
-        appendHeading(cls.getSimpleName());
-        appendCommonTypeDoc(cls);
+    private void appendedNestedTypeDoc(Crd crd, Class<?> cls) throws IOException {
+        appendAnchor(crd, cls);
+        appendHeading(crd, "`" + cls.getSimpleName() + "` type");
+        appendCommonTypeDoc(crd, cls);
     }
 
-    private void appendCommonTypeDoc(Class<?> cls) throws IOException {
-        appendUsedIn(cls);
+    private void appendCommonTypeDoc(Crd crd, Class<?> cls) throws IOException {
+        appendUsedIn(crd, cls);
         appendDescription(cls);
-        appendDiscriminator(cls);
+        appendDiscriminator(crd, cls);
 
         out.append("[options=\"header\"]").append(NL);
         out.append("|====").append(NL);
@@ -181,18 +176,18 @@ public class DocGenerator {
             }
 
             // TODO Deprecated, Minimum?, Pattern?
-            appendPropertyType(propertyType, externalUrl);
+            appendPropertyType(crd, propertyType, externalUrl);
         }
         out.append("|====").append(NL).append(NL);
 
-        appendNestedTypes(types);
+        appendNestedTypes(crd, types);
     }
 
-    private void appendNestedTypes(LinkedHashSet<Class<?>> types) throws IOException {
+    private void appendNestedTypes(Crd crd, LinkedHashSet<Class<?>> types) throws IOException {
         for (Class<?> type : types) {
             for (Class<?> t2 : subtypesOrSelf(type)) {
                 if (!documentedTypes.contains(t2)) {
-                    appendedNestedTypeDoc(t2);
+                    appendedNestedTypeDoc(crd, t2);
                     this.documentedTypes.add(t2);
                 }
             }
@@ -207,14 +202,14 @@ public class DocGenerator {
         return maxLen;
     }
 
-    private void appendPropertyType(PropertyType propertyType, String externalUrl) throws IOException {
+    private void appendPropertyType(Crd crd, PropertyType propertyType, String externalUrl) throws IOException {
         Class<?> propertyClass = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
         out.append(NL).append("|");
         // Now the type link
         if (externalUrl != null) {
             out.append(externalUrl).append("[").append(propertyClass.getSimpleName()).append("]");
         } else {
-            typeLink(out, propertyClass);
+            typeLink(crd, out, propertyClass);
         }
         if (propertyType.isArray()) {
             out.append(" array");
@@ -234,7 +229,7 @@ public class DocGenerator {
         out.append(NL);
     }
 
-    private void appendUsedIn(Class<?> cls) throws IOException {
+    private void appendUsedIn(Crd crd, Class<?> cls) throws IOException {
         List<Class<?>> usedIn = this.usedIn.getOrDefault(cls, emptySet()).stream().collect(Collectors.toCollection(() -> new ArrayList<>()));
         Collections.sort(usedIn, Comparator.comparing(c -> c.getSimpleName().toLowerCase(Locale.ENGLISH)));
         if (!usedIn.isEmpty()) {
@@ -244,7 +239,7 @@ public class DocGenerator {
                 if (!first) {
                     out.append(", ");
                 }
-                typeLink(out, usingClass);
+                typeLink(crd, out, usingClass);
                 first = false;
             }
             out.append(NL);
@@ -252,7 +247,7 @@ public class DocGenerator {
         }
     }
 
-    private void appendDiscriminator(Class<?> cls) throws IOException {
+    private void appendDiscriminator(Crd crd, Class<?> cls) throws IOException {
         String discriminator = discriminator(cls.getSuperclass());
         if (discriminator != null) {
             out.append("The `").append(discriminator)
@@ -260,7 +255,7 @@ public class DocGenerator {
                     .append(cls.getSimpleName()).append("` from ")
                     .append(subtypes(cls.getSuperclass()).stream().filter(c -> !c.equals(cls)).map(c -> {
                         try {
-                            return typeLink(c);
+                            return typeLink(crd, c);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -277,7 +272,7 @@ public class DocGenerator {
         }
     }
 
-    public void typeLink(Appendable out, Class<?> cls) throws IOException {
+    public void typeLink(Crd crd, Appendable out, Class<?> cls) throws IOException {
         if (short.class.equals(cls)
                 || Short.class.equals(cls)
                 || int.class.equals(cls)
@@ -294,26 +289,29 @@ public class DocGenerator {
         } else if (isPolymorphic(cls)) {
             out.append(subtypes(cls).stream().map(c -> {
                 try {
-                    return typeLink(c);
+                    return typeLink(crd, c);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }).collect(Collectors.joining(", ")));
-        } else {
+        } else if (cls.isAnnotationPresent(Crd.class)) {
             // <<KafkaType,`KafkaType`>>
+            out.append("<<").append(anchor(crd)).append(",`").append(cls.getSimpleName()).append("`>>");
+        } else {
             out.append("<<").append(anchor(cls)).append(",`").append(cls.getSimpleName()).append("`>>");
         }
     }
 
-    public String typeLink(Class<?> cls) throws IOException {
+    public String typeLink(Crd crd, Class<?> cls) throws IOException {
         StringBuilder sb = new StringBuilder();
-        typeLink(sb, cls);
+        typeLink(crd, sb, cls);
         return sb.toString();
     }
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         Linker linker = null;
-        Map<String, Class<? extends CustomResource>> classes = new HashMap<>();
+        File out = null;
+        List<Class<? extends CustomResource>> classes = new ArrayList<>();
         outer: for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("-")) {
@@ -333,21 +331,24 @@ public class DocGenerator {
                     throw new RuntimeException("Unsupported option " + arg);
                 }
             } else {
-                String className = arg.substring(0, arg.indexOf('='));
-                String fileName = arg.substring(arg.indexOf('=') + 1);
-                Class<? extends CustomResource> cls = classInherits(Class.forName(className), CustomResource.class);
-
-                if (cls != null) {
-                    classes.put(fileName, cls);
+                if (out == null) {
+                    out = new File(arg);
                 } else {
-                    System.err.println(className + " is not a subclass of " + CustomResource.class.getName());
+                    String className = arg;
+                    Class<? extends CustomResource> cls = classInherits(Class.forName(className), CustomResource.class);
+                    if (cls != null) {
+                        classes.add(cls);
+                    } else {
+                        System.err.println(className + " is not a subclass of " + CustomResource.class.getName());
+                    }
                 }
             }
         }
 
-        for (Map.Entry<String, Class<? extends CustomResource>> entry : classes.entrySet()) {
-            try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(new File(entry.getKey())), StandardCharsets.UTF_8)) {
-                new DocGenerator(3, entry.getValue(), writer, linker).generate();
+        try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(out), StandardCharsets.UTF_8)) {
+            DocGenerator dg = new DocGenerator(3, classes, writer, linker);
+            for (Class<? extends CustomResource> c : classes) {
+                dg.generate(c);
             }
         }
     }
