@@ -34,9 +34,18 @@ endif::InstallationAppendix[]
 [appendix]
 [[kafka_resource_reference]]
 ## The `Kafka` resource reference
-ifdef::InstallationAppendix[]
 include::appendix_kafka_crd.adoc[]
-endif::InstallationAppendix[]
+
+[appendix]
+[[KafkaConnect_resource_reference]]
+## The `KafkaConnect` resource reference
+include::appendix_kafka_connect_crd.adoc[]
+
+[appendix]
+[[KafkaConnectS2I_resource_reference]]
+## The `KafkaConnectS2I` resource reference
+include::appendix_kafka_connect_s2i_crd.adoc[]
+
 
 ifdef::MetricsAppendix[]
 include::appendix_metrics.adoc[]
