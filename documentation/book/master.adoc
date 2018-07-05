@@ -32,8 +32,8 @@ include::appendix_deploying_kubernetes_openshift_cluster.adoc[]
 endif::InstallationAppendix[]
 
 [appendix]
-[[kafka_resource_reference]]
-## Custom Resource Reference
+[[api_reference]]
+## Custom Resource API Reference
 include::appendix_crds.adoc[]
 
 ifdef::MetricsAppendix[]
