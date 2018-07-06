@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1alpha1
 kind: KafkaConnect
 metadata:
-  name: jvm-resource
+  name: my-cluster
 spec:
   replicas: 1
   config:
