@@ -202,7 +202,7 @@ public class ConnectClusterIT extends AbstractClusterIT {
                 "deployment", "strimzi-cluster-operator"));
         //Verifying docker image for kafka connect
         String connectImageName = getImageNameFromPod(kubeClient.listResourcesByLabel("pod",
-                "strimzi.io/type=kafka-connect").get(0));
+                "type=kafka-connect").get(0));
         assertEquals(imgFromDeplConf.get(CONNECT_IMAGE), connectImageName);
         LOGGER.info("Docker images verified");
     }
