@@ -1,9 +1,15 @@
+##---
+# Source: strimzi-kafka-operator/templates/02-ClusterRole-strimzi-cluster-operator-role.yaml
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: strimzi-cluster-operator
   labels:
     app: strimzi
+    chart: strimzi-kafka-operator-0.1.0
+    component: role
+    release: RELEASE-NAME
+    heritage: Tiller
 rules:
 - apiGroups:
   - ""
@@ -16,16 +22,16 @@ rules:
   - patch
   - update
 - apiGroups:
-  - rbac.authorization.k8s.io
+  - "rbac.authorization.k8s.io"
   resources:
   - clusterrolebindings
   - rolebindings
   verbs:
-  - get
-  - create
-  - delete
-  - patch
-  - update
+    - get
+    - create
+    - delete
+    - patch
+    - update
 - apiGroups:
   - ""
   resources:
@@ -39,7 +45,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - kafka.strimzi.io
+  - "kafka.strimzi.io"
   resources:
   - kafkas
   - kafkaconnects
@@ -82,7 +88,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - extensions
+  - "extensions"
   resources:
   - deployments
   - deployments/scale
@@ -96,7 +102,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - apps
+  - "apps"
   resources:
   - deployments
   - deployments/scale
@@ -116,8 +122,9 @@ rules:
   - events
   verbs:
   - create
+# OpenShift S2I requirements
 - apiGroups:
-  - extensions
+  - "extensions"
   resources:
   - replicationcontrollers
   verbs:
